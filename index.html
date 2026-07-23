@@ -1,0 +1,3318 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full bg-slate-50 dark:bg-slate-955">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>B-MAP - Sistem Kelayakan Praktik Otomotif</title>
+  
+  <!-- Tailwind CSS & Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  
+  <!-- Font Google Inter & Playfair Display -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght=0,600;0,800;1,700&display=swap" rel="stylesheet">
+  
+  <!-- Library HTML2PDF untuk Ekspor PDF Sisi Klien -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Playfair Display', 'serif'],
+          },
+          colors: {
+            primary: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              200: '#bae6fd',
+              300: '#7dd3fc',
+              400: '#38bdf8',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              700: '#0369a1',
+              800: '#075985',
+              900: '#0c4a6e',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    .glassmorphism {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .dark .glassmorphism {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .serif-title {
+      font-family: 'Playfair Display', serif;
+    }
+  </style>
+</head>
+<body class="h-full text-slate-800 dark:text-slate-100 transition-colors duration-200">
+
+  <!-- LOADING OVERLAY -->
+  <div id="loading-overlay" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-900/80 backdrop-blur-sm hidden">
+    <div class="relative flex items-center justify-center">
+      <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-primary-500"></div>
+      <i class="bi bi-gear-fill text-2xl text-primary-400 animate-pulse absolute"></i>
+    </div>
+    <p id="loading-text" class="mt-4 text-white font-extrabold text-sm tracking-widest uppercase text-center max-w-xs">Memuat sistem keamanan...</p>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toast-container" class="fixed top-5 right-5 z-50 space-y-3 max-w-sm w-full"></div>
+
+  <!-- UNIVERSAL CONFIRMATION MODAL -->
+  <div id="modal-confirm" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-900 max-w-md w-full rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center text-lg">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+        </div>
+        <h3 class="font-extrabold text-sm uppercase text-slate-800 dark:text-white" id="confirm-modal-title">Konfirmasi Aksi</h3>
+      </div>
+      <p class="text-xs text-slate-500 dark:text-slate-400 font-medium" id="confirm-modal-desc">Apakah Anda yakin ingin melakukan tindakan ini? Tindakan ini tidak dapat dibatalkan.</p>
+      <div class="flex justify-end gap-3 pt-2">
+        <button id="btn-confirm-cancel" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-white text-xs font-bold uppercase rounded-xl transition">Batal</button>
+        <button id="btn-confirm-yes" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-bold uppercase rounded-xl transition">Konfirmasi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOGIN CONTAINER -->
+  <div id="login-container" class="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-slate-100 dark:bg-slate-955 relative overflow-hidden">
+    <div class="absolute -top-40 -left-40 w-96 h-96 bg-primary-500/10 rounded-full blur-3xl"></div>
+    <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl"></div>
+    
+    <div class="max-w-md w-full space-y-8 glassmorphism p-8 rounded-3xl border border-white/20 dark:border-slate-800/50 shadow-2xl relative z-10">
+      <div class="text-center">
+        <div class="inline-flex p-3 bg-primary-600/10 text-primary-600 dark:text-primary-400 rounded-2xl mb-3">
+          <i class="bi bi-shield-fill-check text-4xl"></i>
+        </div>
+        <h2 class="text-3xl font-black tracking-tight text-slate-900 dark:text-white uppercase">B-MAP</h2>
+        <p class="mt-2 text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wide">
+          Sistem Kelayakan Praktik Mandiri Teknik Otomotif
+        </p>
+        <span class="inline-block mt-1.5 px-3 py-1 text-[10px] font-extrabold tracking-widest bg-amber-500/10 text-amber-600 rounded-full uppercase">
+          SMK BOEDI OETOMO 2 GANDRUNGMANGU
+        </span>
+      </div>
+
+      <form id="form-login" class="mt-8 space-y-6">
+        <div class="rounded-2xl space-y-3">
+          <div>
+            <label for="username" class="text-xs font-black uppercase text-slate-500 tracking-wider block mb-1">Username</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="bi bi-person-fill"></i></span>
+              <input id="username" name="username" type="text" required class="appearance-none rounded-2xl relative block w-full pl-10 pr-3 py-3 border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm font-semibold transition" placeholder="Username">
+            </div>
+          </div>
+          <div>
+            <label for="password" class="text-xs font-black uppercase text-slate-500 tracking-wider block mb-1">Password</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="bi bi-lock-fill"></i></span>
+              <input id="password" name="password" type="password" required class="appearance-none rounded-2xl relative block w-full pl-10 pr-3 py-3 border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm font-semibold transition" placeholder="Password">
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <button type="submit" class="group relative w-full flex justify-center py-3.5 px-4 border border-transparent text-xs font-black uppercase tracking-wider rounded-2xl text-white bg-primary-600 hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 shadow-lg shadow-primary-600/20 transition-all duration-150">
+            <span class="absolute left-0 inset-y-0 flex items-center pl-3"><i class="bi bi-box-arrow-in-right text-base"></i></span>
+            Masuk Kredensial
+          </button>
+        </div>
+      </form>
+
+      <div class="flex items-center justify-between border-t border-slate-200 dark:border-slate-800/80 pt-4 text-[10px]">
+        <div class="flex items-center gap-1.5 font-bold text-slate-500">
+          <i class="bi bi-database-fill text-primary-500 animate-pulse"></i>
+          <span id="conn-status">Status Sistem: Online</span>
+        </div>
+        <button onclick="toggleDarkMode()" class="text-slate-500 hover:text-slate-700 dark:hover:text-white transition">
+          <i id="theme-icon" class="bi bi-moon-stars-fill text-sm"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN APP CONTAINER -->
+  <div id="app-container" class="min-h-full flex flex-col md:flex-row hidden">
+    <!-- SIDEBAR DESKTOP -->
+    <aside class="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-slate-900 text-white z-20">
+      <div class="flex flex-col flex-grow pt-5 pb-4 overflow-y-auto">
+        <div class="flex items-center px-5 mb-8">
+          <div class="p-2 bg-primary-600 rounded-xl mr-3">
+            <i class="bi bi-lightning-charge-fill text-lg"></i>
+          </div>
+          <div>
+            <h1 class="text-base font-black tracking-widest uppercase text-white leading-none">B-MAP</h1>
+            <span class="text-[9px] font-bold text-slate-400 tracking-wider">SMK BOEDI OETOMO 2 GANDRUNGMANGU</span>
+          </div>
+        </div>
+
+        <!-- Profil User -->
+        <div class="px-5 mb-6 py-3 border-y border-slate-800 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-primary-600/20 border border-primary-500/30 flex items-center justify-center text-primary-400 font-extrabold text-sm uppercase" id="avatar-desktop">U</div>
+          <div class="overflow-hidden">
+            <h4 class="text-xs font-black tracking-wide truncate text-white" id="user-name-desktop">User Name</h4>
+            <span class="text-[9px] font-extrabold tracking-wider text-amber-500 uppercase block" id="user-role-desktop">Role</span>
+          </div>
+        </div>
+
+        <!-- Navigation Menu -->
+        <nav class="flex-1 px-3 space-y-1">
+          <button id="btn-menu-beranda-dt" onclick="switchView('beranda')" class="flex items-center w-full px-4 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition gap-3 bg-slate-800 text-white">
+            <i class="bi bi-grid-1x2-fill text-sm"></i> Beranda Utama
+          </button>
+          <button id="btn-menu-jobsheet-dt" onclick="switchView('jobsheet')" class="flex items-center w-full px-4 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition gap-3 text-slate-400 hover:bg-slate-800 hover:text-white">
+            <i class="bi bi-file-earmark-ruled-fill text-sm"></i> Daftar Jobsheet
+          </button>
+          <button id="btn-menu-wp-dt" onclick="switchView('wp')" class="flex items-center w-full px-4 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition gap-3 text-slate-400 hover:bg-slate-800 hover:text-white">
+            <i class="bi bi-tools text-sm"></i> Rencana Kerja (WP)
+          </button>
+          <button id="btn-menu-laporan-dt" onclick="switchView('laporan')" class="flex items-center w-full px-4 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition gap-3 text-slate-400 hover:bg-slate-800 hover:text-white">
+            <i class="bi bi-file-earmark-text-fill text-sm"></i> Berkas Laporan
+          </button>
+          <button id="btn-menu-sertifikat-dt" onclick="switchView('sertifikat')" class="flex items-center w-full px-4 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition gap-3 text-slate-400 hover:bg-slate-800 hover:text-white">
+            <i class="bi bi-patch-check-fill text-sm"></i> E-Sertifikat
+          </button>
+          <button id="btn-menu-nilai-dt" onclick="switchView('nilai')" class="flex items-center w-full px-4 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition gap-3 text-slate-400 hover:bg-slate-800 hover:text-white">
+            <i class="bi bi-mortarboard-fill text-sm"></i> Rekapitulasi Nilai
+          </button>
+          <button id="btn-menu-settings-dt" onclick="switchView('settings')" class="flex items-center w-full px-4 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition gap-3 text-slate-400 hover:bg-slate-800 hover:text-white hidden">
+            <i class="bi bi-sliders text-sm"></i> Konfigurasi Lembaga
+          </button>
+        </nav>
+
+        <div class="px-3 mt-auto">
+          <button onclick="handleLogout()" class="flex items-center w-full px-4 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition gap-3 text-red-400 hover:bg-red-500/10">
+            <i class="bi bi-box-arrow-left text-sm"></i> Keluar Sesi
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MOBILE BOTTOM NAVIGATION -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-slate-950 text-white border-t border-slate-800/80 z-30 flex justify-around items-center py-2">
+      <button id="btn-menu-beranda-mb" onclick="switchView('beranda')" class="flex flex-col items-center gap-0.5 text-primary-500 transition">
+        <i class="bi bi-grid-1x2-fill text-lg"></i>
+        <span class="text-[8px] font-bold uppercase tracking-widest">Beranda</span>
+      </button>
+      <button id="btn-menu-jobsheet-mb" onclick="switchView('jobsheet')" class="flex flex-col items-center gap-0.5 text-slate-500 hover:text-white transition">
+        <i class="bi bi-file-earmark-ruled-fill text-lg"></i>
+        <span class="text-[8px] font-bold uppercase tracking-widest">Jobsheet</span>
+      </button>
+      <button id="btn-menu-wp-mb" onclick="switchView('wp')" class="flex flex-col items-center gap-0.5 text-slate-500 hover:text-white transition">
+        <i class="bi bi-tools text-lg"></i>
+        <span class="text-[8px] font-bold uppercase tracking-widest">Rencana</span>
+      </button>
+      <button id="btn-menu-laporan-mb" onclick="switchView('laporan')" class="flex flex-col items-center gap-0.5 text-slate-500 hover:text-white transition">
+        <i class="bi bi-file-earmark-text-fill text-lg"></i>
+        <span class="text-[8px] font-bold uppercase tracking-widest">Laporan</span>
+      </button>
+      <button id="btn-menu-sertifikat-mb" onclick="switchView('sertifikat')" class="flex flex-col items-center gap-0.5 text-slate-500 hover:text-white transition">
+        <i class="bi bi-patch-check-fill text-lg"></i>
+        <span class="text-[8px] font-bold uppercase tracking-widest">Sertifikat</span>
+      </button>
+      <button id="btn-menu-nilai-mb" onclick="switchView('nilai')" class="flex flex-col items-center gap-0.5 text-slate-500 hover:text-white transition">
+        <i class="bi bi-mortarboard-fill text-lg"></i>
+        <span class="text-[8px] font-bold uppercase tracking-widest">Nilai</span>
+      </button>
+    </nav>
+
+    <!-- MAIN CONTENT VIEWPORTS -->
+    <div class="flex-1 md:pl-64 flex flex-col min-w-0 pb-20 md:pb-0 bg-slate-50 dark:bg-slate-950">
+      <header class="glassmorphism border-b border-slate-200 dark:border-slate-800/80 sticky top-0 z-10 px-4 py-4 flex justify-between items-center">
+        <div>
+          <span class="text-[9px] font-black uppercase text-primary-600 dark:text-primary-400 tracking-widest" id="header-subtitle">Teknik Otomotif</span>
+          <h2 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider" id="header-title">B-MAP Engine</h2>
+        </div>
+        <div class="flex items-center gap-3">
+          <button onclick="toggleDarkMode()" class="p-2 text-slate-500 hover:text-slate-800 dark:hover:text-white rounded-xl bg-slate-100 dark:bg-slate-900 transition">
+            <i id="theme-icon-main" class="bi bi-moon-stars-fill text-xs"></i>
+          </button>
+          <div class="flex items-center gap-2 border-l border-slate-200 dark:border-slate-800 pl-3">
+            <div class="text-right hidden sm:block">
+              <p class="text-xs font-black text-slate-800 dark:text-white leading-none uppercase" id="user-name-header">User Name</p>
+              <p class="text-[8px] font-bold text-amber-500 uppercase tracking-widest" id="user-role-header">Role</p>
+            </div>
+            <div class="w-8 h-8 rounded-full bg-primary-600/10 text-primary-600 dark:text-primary-400 border border-primary-500/20 flex items-center justify-center font-black text-xs uppercase" id="avatar-header">U</div>
+          </div>
+        </div>
+      </header>
+
+      <main class="flex-grow p-4 sm:p-6 lg:p-8 overflow-y-auto">
+
+        <!-- VIEW: BERANDA -->
+        <section id="view-beranda" class="space-y-6">
+          <div class="p-6 sm:p-8 bg-gradient-to-r from-slate-900 via-primary-950 to-slate-900 rounded-3xl text-white relative overflow-hidden border border-slate-800 shadow-xl">
+            <div class="absolute -top-12 -right-12 w-48 h-48 bg-amber-500/10 rounded-full blur-2xl"></div>
+            <div class="relative z-10 max-w-xl space-y-2">
+              <span id="welcome-greetings" class="px-3 py-1 bg-amber-500/10 text-amber-500 rounded-full text-[9px] font-black tracking-widest uppercase inline-block">Selamat Pagi ☀️</span>
+              <h2 class="text-xl sm:text-2xl font-black uppercase tracking-wider">Halo, <span id="welcome-user-name" class="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-cyan-400">Nama Pengguna</span>!</h2>
+              <p class="text-slate-400 text-xs font-medium leading-relaxed">Selamat datang di sistem kelayakan praktik mandiri Teknik Otomotif. Di sini Anda dapat mengelola rencana persiapan kerja, menyerahkan berkas laporan unjuk kerja, hingga memantau dan mengunduh E-Sertifikat kelayakan secara real-time.</p>
+            </div>
+          </div>
+
+          <!-- Quick Actions Grid -->
+          <div class="space-y-3">
+            <h3 class="text-xs font-black uppercase text-slate-400 tracking-wider">Aksi Cepat Menu</h3>
+            <div id="quick-actions-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+          </div>
+
+          <!-- Statistik Dasar -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="p-5 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800/80 shadow-sm flex items-center justify-between">
+              <div>
+                <span class="text-[9px] font-black uppercase text-slate-400 tracking-wider">Total Jobsheet</span>
+                <p id="stat-jobsheets" class="text-2xl font-black mt-1 text-slate-800 dark:text-white">0</p>
+              </div>
+              <div class="w-10 h-10 rounded-2xl bg-primary-500/10 text-primary-500 flex items-center justify-center text-lg"><i class="bi bi-file-earmark-ruled-fill"></i></div>
+            </div>
+            <div class="p-5 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800/80 shadow-sm flex items-center justify-between">
+              <div>
+                <span class="text-[9px] font-black uppercase text-slate-400 tracking-wider">Rencana Disetujui</span>
+                <p id="stat-wp" class="text-2xl font-black mt-1 text-emerald-600">0</p>
+              </div>
+              <div class="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-lg"><i class="bi bi-tools"></i></div>
+            </div>
+            <div class="p-5 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800/80 shadow-sm flex items-center justify-between">
+              <div>
+                <span class="text-[9px] font-black uppercase text-slate-400 tracking-wider">Berkas Laporan</span>
+                <p id="stat-laporan" class="text-2xl font-black mt-1 text-indigo-500">0</p>
+              </div>
+              <div class="w-10 h-10 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center text-lg"><i class="bi bi-file-earmark-text-fill"></i></div>
+            </div>
+            <div class="p-5 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800/80 shadow-sm flex items-center justify-between">
+              <div>
+                <span class="text-[9px] font-black uppercase text-slate-400 tracking-wider">E-Sertifikat Terbit</span>
+                <p id="stat-sertifikat" class="text-2xl font-black mt-1 text-amber-500">0</p>
+              </div>
+              <div class="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center text-lg"><i class="bi bi-patch-check-fill"></i></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW: JOBSHEET -->
+        <section id="view-jobsheet" class="space-y-6 hidden">
+          <div class="flex justify-between items-center">
+            <div>
+              <h3 class="text-lg font-black text-slate-800 dark:text-white uppercase tracking-wider">Unit Kelayakan Jobsheet</h3>
+              <p class="text-[10px] text-slate-400 font-medium">Daftar lembar modul uji coba unjuk kerja kejuruan Teknik Otomotif.</p>
+            </div>
+            <button id="btn-add-jobsheet" onclick="openAddJobsheetModal()" class="px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition flex items-center gap-1.5 hidden">
+              <i class="bi bi-plus-circle-fill"></i> Buat Modul
+            </button>
+          </div>
+          <div id="jobsheet-cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </section>
+
+        <!-- VIEW: WORK PREPARATION -->
+        <section id="view-wp" class="space-y-6 hidden">
+          <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+            <div>
+              <h3 class="text-lg font-black text-slate-800 dark:text-white uppercase tracking-wider">Work Preparation (WP)</h3>
+              <p class="text-[10px] text-slate-400 font-medium">Lembar rencana persiapan kerja mandiri sebelum unjuk kerja di bengkel.</p>
+            </div>
+            <button id="btn-submit-wp" onclick="openWPSubmissionModal()" class="px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition flex items-center gap-1.5 hidden">
+              <i class="bi bi-send-fill"></i> Ajukan Rencana Baru
+            </button>
+          </div>
+          <div id="wp-cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </section>
+
+        <!-- VIEW: LAPORAN -->
+        <section id="view-laporan" class="space-y-6 hidden">
+          <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+            <div>
+              <h3 class="text-lg font-black text-slate-800 dark:text-white uppercase tracking-wider">Berkas Pelaporan Hasil Akhir</h3>
+              <p class="text-[10px] text-slate-400 font-medium">Unggah dan pantau dokumen portofolio laporan sebagai bukti ketuntasan kerja.</p>
+            </div>
+            <button id="btn-submit-laporan" onclick="openLaporanSubmissionModal()" class="px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition flex items-center gap-1.5 hidden">
+              <i class="bi bi-cloud-arrow-up-fill"></i> Kirim Laporan Akhir
+            </button>
+          </div>
+          <div id="laporan-cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </section>
+
+        <!-- VIEW: SERTIFIKAT -->
+        <section id="view-sertifikat" class="space-y-6 hidden">
+          <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+            <div>
+              <h3 class="text-lg font-black text-slate-800 dark:text-white uppercase tracking-wider">Portofolio E-Sertifikat Kelayakan</h3>
+              <p class="text-[10px] text-slate-400 font-medium">E-Sertifikat diterbitkan secara otomatis setelah divalidasi LULUS oleh Guru Penguji.</p>
+            </div>
+            <button id="btn-add-cert" onclick="openAddCertificateModal()" class="px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition flex items-center gap-1.5 hidden">
+              <i class="bi bi-plus-circle-fill"></i> Terbitkan Sertifikat
+            </button>
+          </div>
+
+          <!-- TEACHER CLASS FILTER FOR CERTIFICATES -->
+          <div id="cert-filter-wrapper" class="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl flex flex-col sm:flex-row gap-4 items-center justify-between shadow-sm hidden">
+            <div class="w-full sm:w-1/3 flex items-center gap-3">
+              <label for="filter-cert-class" class="text-[10px] font-black uppercase text-slate-400 tracking-wider whitespace-nowrap">Filter Kelas:</label>
+              <select id="filter-cert-class" onchange="renderSertifikatCards()" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold bg-slate-50 dark:bg-slate-950 focus:outline-none focus:ring-1 focus:ring-primary-500">
+                <option value="SEMUA">Semua Kelas</option>
+              </select>
+            </div>
+            <div class="text-[10px] font-bold text-slate-400 w-full sm:w-auto text-right">
+              <span id="cert-stats-text" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-xl inline-block">Menampilkan 0 Sertifikat</span>
+            </div>
+          </div>
+
+          <div id="sertifikat-cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </section>
+
+        <!-- VIEW: REKAPITULASI NILAI -->
+        <section id="view-nilai" class="space-y-6 hidden">
+          <div class="flex flex-col sm:flex-row justify-between sm:items-center border-b border-slate-200 dark:border-slate-800 pb-4 gap-4">
+            <div>
+              <h3 class="text-lg font-black text-slate-800 dark:text-white uppercase tracking-wider">Transkrip Penilaian Kejuruan</h3>
+              <p class="text-[10px] text-slate-400 font-medium">Rekapitulasi teoretis (TP1-TP6), UTS (ATS), UAS (AAS), dan unjuk kerja praktik.</p>
+            </div>
+            <button id="btn-add-nilai" onclick="openAddNilaiModal()" class="px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition flex items-center gap-1.5">
+              <i class="bi bi-plus-circle-fill"></i> Input Nilai Manual
+            </button>
+          </div>
+
+          <!-- LIGHTWEIGHT DYNAMIC FILTERS -->
+          <div class="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl flex flex-col sm:flex-row gap-4 items-end shadow-sm">
+            <div class="w-full sm:w-1/3">
+              <label for="filter-nilai-kelas" class="text-[9px] font-black uppercase text-slate-400 tracking-wider block mb-1">Pilih Kelas</label>
+              <select id="filter-nilai-kelas" onchange="renderNilaiTable()" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold bg-slate-50 dark:bg-slate-950 focus:outline-none focus:ring-1 focus:ring-primary-500">
+                <option value="SEMUA">Semua Kelas</option>
+              </select>
+            </div>
+            <div class="w-full sm:w-1/3">
+              <label for="filter-nilai-jobsheet" class="text-[9px] font-black uppercase text-slate-400 tracking-wider block mb-1">Pilih Jobsheet</label>
+              <select id="filter-nilai-jobsheet" onchange="renderNilaiTable()" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold bg-slate-50 dark:bg-slate-955 focus:outline-none focus:ring-1 focus:ring-primary-500">
+                <option value="SEMUA">Semua Jobsheet</option>
+              </select>
+            </div>
+            <div class="w-full sm:w-1/3 flex items-center justify-between sm:justify-end text-[10px] font-bold text-slate-400 h-9">
+              <span id="filter-stats-text" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-xl">Menampilkan 0 data</span>
+            </div>
+          </div>
+
+          <!-- REKAPITULASI TABLE -->
+          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-100 dark:bg-slate-800/80 uppercase text-slate-600 dark:text-slate-400 font-black tracking-widest text-[9px] border-b border-slate-200 dark:border-slate-800">
+                  <tr>
+                    <th class="p-4">Siswa</th>
+                    <th class="p-4">Jobsheet</th>
+                    <th class="p-4 text-center">Rata TP</th>
+                    <th class="p-4 text-center">Persiapan (WP)</th>
+                    <th class="p-4 text-center">Praktik</th>
+                    <th class="p-4 text-center">Laporan</th>
+                    <th class="p-4 text-center bg-primary-600/10 text-primary-600">Nilai Akhir</th>
+                    <th class="p-4 text-center">Predikat</th>
+                    <th class="p-4 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="nilai-table-rows" class="divide-y divide-slate-100 dark:divide-slate-800/80"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW: SETTINGS -->
+        <section id="view-settings" class="space-y-6 hidden">
+          <div>
+            <h3 class="text-lg font-black text-slate-800 dark:text-white uppercase tracking-wider">Konfigurasi Lembaga & Sertifikat</h3>
+            <p class="text-[10px] text-slate-400 font-medium">Sesuaikan identitas, tanda tangan, stempel, dan visual dokumen E-Sertifikat di sini.</p>
+          </div>
+
+          <form id="form-settings" class="grid grid-cols-1 lg:grid-cols-2 gap-6" onsubmit="event.preventDefault(); saveSystemSettings();">
+            <div class="p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm space-y-4">
+              <h4 class="font-extrabold text-xs text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-2">Profil Sekolah</h4>
+              <div>
+                <label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Nama Lembaga Pendidikan</label>
+                <input type="text" id="setting-school-name" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary-500">
+              </div>
+              <div>
+                <label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Nama Program Keahlian / Jurusan</label>
+                <input type="text" id="setting-dept-name" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-955 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary-500">
+              </div>
+              <div>
+                <label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Alamat Lembaga</label>
+                <input type="text" id="setting-school-address" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-955 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary-500">
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Nama Kepala Sekolah</label>
+                  <input type="text" id="setting-principal-name" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-semibold">
+                </div>
+                <div>
+                  <label class="text-[10px] font-black uppercase text-slate-400 block mb-1">NIP Kepala Sekolah</label>
+                  <input type="text" id="setting-principal-nip" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-955 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-semibold">
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Nama Guru Kelas / Pengampu</label>
+                  <input type="text" id="setting-teacher-name" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-955 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-semibold">
+                </div>
+                <div>
+                  <label class="text-[10px] font-black uppercase text-slate-400 block mb-1">NIP / NUPTK Guru</label>
+                  <input type="text" id="setting-teacher-nip" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-semibold">
+                </div>
+              </div>
+            </div>
+
+            <div class="p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm space-y-4">
+              <h4 class="font-extrabold text-xs text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-2">Identitas Visual (Tautan URL)</h4>
+              <div>
+                <label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Tautan Logo Lembaga / Sekolah</label>
+                <input type="text" id="setting-school-logo" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-semibold">
+              </div>
+              <div>
+                <label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Tautan Logo Kompetensi / Jurusan</label>
+                <input type="text" id="setting-dept-logo" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-semibold">
+              </div>
+              <div>
+                <label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Tautan TTD Kepala Sekolah</label>
+                <input type="text" id="setting-sig-principal" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-955 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-semibold">
+              </div>
+              <div>
+                <label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Tautan TTD Penguji / Guru</label>
+                <input type="text" id="setting-sig-teacher" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-955 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-semibold">
+              </div>
+              <div>
+                <label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Tautan Stempel Lembaga Basah</label>
+                <input type="text" id="setting-stamp-school" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-955 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-semibold">
+              </div>
+            </div>
+
+            <div class="lg:col-span-2 p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm space-y-4">
+              <h4 class="font-extrabold text-xs text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-2">Deskripsi Pernyataan Ketuntasan Sertifikat</h4>
+              <div>
+                <textarea id="setting-cert-desc" rows="3" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-semibold"></textarea>
+              </div>
+              <div class="flex justify-end pt-2">
+                <button type="submit" class="px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-2xl transition">
+                  <i class="bi bi-floppy-fill mr-1"></i> Simpan Konfigurasi Lembaga
+                </button>
+              </div>
+            </div>
+          </form>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- MODAL: PREVIEW SERTIFIKAT -->
+  <div id="modal-cert-preview" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-955 max-w-5xl w-full rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+      <div class="p-5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
+        <div>
+          <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider">Pratinjau E-Sertifikat Kelayakan</h3>
+          <p class="text-[10px] text-slate-400 font-semibold uppercase">Dokumen Sah Ukuran A4 Landscape</p>
+        </div>
+        <button onclick="window.closeCertPreviewModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white transition text-lg"><i class="bi bi-x-circle-fill"></i></button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-4 bg-slate-100 dark:bg-slate-900 flex justify-center items-center">
+        <!-- PRINTABLE AREA (Standard Landscape A4 Ratio with 6mm outer safety margin & bold fonts) -->
+        <div id="printable-area" style="width: 297mm; height: 210mm; min-width: 297mm; min-height: 210mm; max-width: 297mm; max-height: 210mm; background-color: #ffffff; color: #0f172a; padding: 6mm; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; position: relative; font-family: 'Inter', sans-serif; overflow: hidden;">
+          
+          <!-- INNER DOUBLE BORDER FRAME -->
+          <div style="width: 100%; height: 100%; border: 6px double #b45309; padding: 18px 30px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; position: relative; background-color: #ffffff;">
+
+            <!-- CORNER ACCENTS -->
+            <div style="position: absolute; top: 6px; left: 6px; width: 32px; height: 32px; border-top: 3px solid #b45309; border-left: 3px solid #b45309;"></div>
+            <div style="position: absolute; top: 6px; right: 6px; width: 32px; height: 32px; border-top: 3px solid #b45309; border-right: 3px solid #b45309;"></div>
+            <div style="position: absolute; bottom: 6px; left: 6px; width: 32px; height: 32px; border-bottom: 3px solid #b45309; border-left: 3px solid #b45309;"></div>
+            <div style="position: absolute; bottom: 6px; right: 6px; width: 32px; height: 32px; border-bottom: 3px solid #b45309; border-right: 3px solid #b45309;"></div>
+
+            <!-- HEADER KOP -->
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2.5px solid #d97706; padding-bottom: 12px; position: relative; z-index: 10;">
+              <img id="cert-display-school-logo" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="" style="width: 82px; height: 82px; object-fit: contain;">
+              <div style="text-align: center; flex-grow: 1; padding: 0 16px;">
+                <h2 id="cert-display-school-name" class="serif-title" style="font-weight: 900; font-size: 25px; letter-spacing: 0.04em; color: #1e293b; margin: 0; line-height: 1.2;">SMK BOEDI OETOMO 2 GANDRUNGMANGU</h2>
+                <p id="cert-display-school-address" style="font-size: 12px; color: #475569; font-weight: 700; text-transform: uppercase; margin: 5px 0 0 0; letter-spacing: 0.02em;">JL. RAYA GANDRUNGMANGU NO. 22, CILACAP, JAWA TENGAH</p>
+                <p style="font-size: 13px; font-weight: 800; color: #334155; text-transform: uppercase; margin: 5px 0 0 0;">PROGRAM KEAHLIAN: <span id="cert-display-dept-name" style="color: #b45309; font-weight: 900;">TEKNIK OTOMOTIF</span></p>
+              </div>
+              <img id="cert-display-dept-logo" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="" style="width: 82px; height: 82px; object-fit: contain;">
+            </div>
+
+            <!-- BODY CONTENT -->
+            <div style="text-align: center; margin: 6px 0; position: relative; z-index: 10;">
+              <h1 class="serif-title" style="font-weight: 900; font-size: 34px; color: #d97706; letter-spacing: 0.08em; margin: 0 0 4px 0;">SERTIFIKAT KOMPETENSI</h1>
+              <p style="color: #475569; font-size: 13px; font-weight: 700; margin: 0;">NOMOR SERTIFIKAT: <span id="cert-display-number" style="font-family: monospace; font-weight: 800; color: #0f172a; font-size: 14px;">-</span></p>
+              
+              <div style="margin: 12px 0 10px 0;">
+                <p style="font-size: 14px; color: #64748b; font-style: italic; margin: 0;">Diberikan secara terhormat kepada Siswa Berprestasi:</p>
+                <h3 id="cert-display-student" class="serif-title" style="font-weight: 900; font-size: 32px; color: #0f172a; margin: 6px 0; border-bottom: 2px dashed #cbd5e1; display: inline-block; padding: 0 36px 4px 36px; text-transform: uppercase;">-</h3>
+                <p style="font-size: 13px; font-family: monospace; color: #475569; margin: 6px 0 0 0;">NOMOR INDUK SISWA: <span id="cert-display-nis" style="font-weight: 800; color: #0f172a;">-</span></p>
+              </div>
+
+              <p id="cert-display-desc" style="max-width: 900px; margin: 0 auto; font-size: 13px; line-height: 1.5; color: #334155; font-weight: 600;">-</p>
+              
+              <!-- TOPIK KOMPETENSI BOX -->
+              <div style="margin-top: 14px; text-align: center;">
+                <div style="display: inline-block; background-color: #fffbeb; border: 2.5px solid #d97706; padding: 10px 36px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.04);">
+                  <span id="cert-display-jobsheet" style="font-weight: 900; font-size: 19px; color: #78350f; text-transform: uppercase; letter-spacing: 0.06em; display: inline-block;">-</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- FOOTER SIGNATURES -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; padding-top: 10px; border-top: 1.5px solid #fde68a; font-size: 13px; color: #334155; position: relative; z-index: 10;">
+              
+              <!-- TTD PENGUJI -->
+              <div style="text-align: center; width: 250px; display: flex; flex-direction: column; align-items: center;">
+                <p style="font-weight: 700; margin: 0 0 4px 0; font-size: 13px;">Penguji Praktik,</p>
+                <div style="height: 52px; display: flex; align-items: center; justify-content: center;">
+                  <img id="cert-display-sig-teacher" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="" style="max-height: 52px; max-width: 180px; object-fit: contain;">
+                </div>
+                <div style="width: 170px; height: 1.5px; background-color: #94a3b8; margin: 4px 0;"></div>
+                <p id="cert-display-teacher-name" style="font-weight: 800; color: #0f172a; margin: 0; font-size: 13px;">Guru Pengampu</p>
+                <p id="cert-display-teacher-nip" style="font-size: 11px; color: #64748b; margin: 1px 0 0 0; font-weight: 600;">NIP. -</p>
+              </div>
+              
+              <!-- QR CODE VERIFIKASI -->
+              <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <img id="cert-display-qr" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="" style="width: 68px; height: 68px; border: 1px solid #cbd5e1; padding: 3px; background-color: #ffffff; border-radius: 8px;">
+                <span style="font-size: 9px; font-family: monospace; color: #64748b; margin-top: 5px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">QR VERIFIKASI SAH</span>
+              </div>
+
+              <!-- TTD KEPALA SEKOLAH & STEMPEL -->
+              <div style="text-align: center; width: 250px; display: flex; flex-direction: column; align-items: center; position: relative;">
+                <img id="cert-display-stamp" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="" style="position: absolute; width: 85px; height: 85px; left: -10px; top: -12px; opacity: 0.85; pointer-events: none; z-index: 20;">
+                <p style="font-weight: 700; margin: 0 0 4px 0; font-size: 13px;">Mengetahui, Kepala Sekolah</p>
+                <div style="height: 52px; display: flex; align-items: center; justify-content: center;">
+                  <img id="cert-display-sig-principal" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="" style="max-height: 52px; max-width: 180px; object-fit: contain;">
+                </div>
+                <div style="width: 180px; height: 1.5px; background-color: #94a3b8; margin: 4px 0;"></div>
+                <p id="cert-display-principal-name" style="font-weight: 800; color: #0f172a; margin: 0; font-size: 13px;">-</p>
+                <p id="cert-display-principal-nip" style="font-size: 11px; color: #64748b; margin: 1px 0 0 0; font-weight: 600;">NIP. -</p>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="p-5 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex justify-end gap-3">
+        <button onclick="window.closeCertPreviewModal()" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition">Batal</button>
+        <button onclick="window.downloadCertificatePDFDirect()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition flex items-center gap-1.5 shadow-lg shadow-emerald-600/10"><i class="bi bi-file-earmark-pdf-fill"></i> Simpan File PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CRUD FORM (DYNAMIC POPUPS) -->
+  <div id="modal-crud" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-900 max-w-lg w-full rounded-3xl overflow-hidden shadow-2xl flex flex-col">
+      <div class="p-5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+        <h3 id="modal-crud-title" class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider">Formulir Aksi</h3>
+        <button onclick="window.closeCRUDModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white transition text-lg"><i class="bi bi-x-circle-fill"></i></button>
+      </div>
+      <div class="p-6 overflow-y-auto max-h-[75vh]" id="modal-crud-body"></div>
+    </div>
+  </div>
+
+  <!-- STABLE JAVASCRIPT ENGINE -->
+  <script>
+    // Suppress unhandled promise rejections globally
+    window.addEventListener("unhandledrejection", function(event) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }, true);
+
+    window.onerror = function(message, source, lineno) {
+      if (document.getElementById("toast-container")) {
+        showToast("Sistem Terproteksi", message + " (Baris: " + lineno + ")", "danger");
+      }
+      return true;
+    };
+
+    // ISIKAN TAUTAN WEB APP APPS SCRIPT ANDA DI SINI UNTUK HOSTING DI VERCEL
+    var GAS_API_URL = "https://script.google.com/macros/s/AKfycbx-wT8AglSwL1eWKlJ81G0hvjZpO23qOM15Dn9QzeAhOTjPnr-6G9LDmKcVtlMiwtdLjg/exec"; 
+
+    var isMockMode = (typeof google === "undefined" || typeof google.script === "undefined") && (!GAS_API_URL || GAS_API_URL === "URL_WEB_APP_APPS_SCRIPT_ANDA");
+    var activeUser = null;
+    var appData = {
+      jobsheets: [],
+      wp: [],
+      nilai: [],
+      laporan: [],
+      sertifikat: [],
+      settings: {},
+      students: [],
+      logs: []
+    };
+    var activeCertData = null;
+    var confirmCallback = null;
+
+    // Bridge API Universal (Otomatis memilih Fetch API Vercel / google.script.run)
+    window.callBackendApi = function callBackendApi(actionName, payloadData, onSuccess, onFailure) {
+      if (typeof google !== "undefined" && google.script && google.script.run) {
+        var runner = google.script.run
+          .withSuccessHandler(onSuccess)
+          .withFailureHandler(onFailure);
+        
+        if (actionName === "login") runner.login(payloadData);
+        else if (actionName === "getAllAppData") runner.getAllAppData(payloadData.role, payloadData.class, payloadData.nis_nip);
+        else if (actionName === "saveJobsheet") runner.saveJobsheet(payloadData);
+        else if (actionName === "submitWorkPrep") runner.submitWorkPrep(payloadData);
+        else if (actionName === "saveWPReview") runner.saveWPReview(payloadData);
+        else if (actionName === "submitLaporan") runner.submitLaporan(payloadData);
+        else if (actionName === "saveLaporanReview") runner.saveLaporanReview(payloadData);
+        else if (actionName === "saveStudentGrading") runner.saveStudentGrading(payloadData);
+        else if (actionName === "deleteNilai") runner.deleteNilai(payloadData);
+        else if (actionName === "createOrUpdateGrading") runner.createOrUpdateGrading(payloadData);
+        else if (actionName === "directIssueCertificate") runner.directIssueCertificate(payloadData);
+        else if (actionName === "deleteCertificate") runner.deleteCertificate(payloadData);
+        else if (actionName === "deleteWorkPrep") runner.deleteWorkPrep(payloadData);
+        else if (actionName === "deleteLaporan") runner.deleteLaporan(payloadData);
+        else if (actionName === "deleteJobsheet") runner.deleteJobsheet(payloadData);
+        else if (actionName === "updateSertifikatSettings") runner.updateSertifikatSettings(payloadData);
+        else if (actionName === "getCertificateBase64Images") runner.getCertificateBase64Images(payloadData);
+      } else if (GAS_API_URL && GAS_API_URL !== "URL_WEB_APP_APPS_SCRIPT_ANDA") {
+        fetch(GAS_API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ action: actionName, payload: payloadData })
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(res) { onSuccess(res); })
+        .catch(function(err) { onFailure(err); });
+      } else {
+        onFailure("API Backend belum dikonfigurasi.");
+      }
+    };
+
+    window.handleLogin = function handleLogin() {
+      var userVal = document.getElementById("username").value.trim();
+      var passVal = document.getElementById("password").value;
+
+      if (!userVal || !passVal) {
+        showToast("Formulir Kosong", "Harap lengkapi isian Anda!", "warning");
+        return;
+      }
+
+      toggleLoading(true, "Memvalidasi kredensial login...");
+
+      if (isMockMode) {
+        setTimeout(function() {
+          var userObj = null;
+          if (userVal === "admin" && passVal === "admin123") {
+            userObj = { id: "USR-001", username: "admin", role: "Admin", name: "Super Admin Otomotif", nis_nip: "ADMIN-01", class: "Semua" };
+          } else if (userVal === "guru1" && passVal === "guru123") {
+            userObj = { id: "USR-002", username: "guru1", role: "Guru", name: "Supriyanto, S.Pd.", nis_nip: "19880312", class: "XI TO 1" };
+          } else if (userVal === "siswa1" && passVal === "siswa123") {
+            userObj = { id: "USR-003", username: "siswa1", role: "Siswa", name: "Rian Hidayat", nis_nip: "10293", class: "XI TO 1" };
+          }
+
+          if (userObj) {
+            activeUser = userObj;
+            localStorage.setItem("otopras_session", JSON.stringify(userObj));
+            bootstrapApp();
+            showToast("Sukses", "Selamat datang kembali, " + userObj.name, "success");
+          } else {
+            toggleLoading(false);
+            showToast("Akses Ditolak", "Kombinasi kredensial salah.", "danger");
+          }
+        }, 800);
+      } else {
+        callBackendApi("login", { username: userVal, password: passVal },
+          function(res) {
+            if (res && res.success) {
+              activeUser = res.user;
+              localStorage.setItem("otopras_session", JSON.stringify(res.user));
+              bootstrapApp();
+              showToast("Sukses", "Selamat datang kembali, " + res.user.name, "success");
+            } else {
+              toggleLoading(false);
+              showToast("Akses Ditolak", (res && res.message) ? res.message : "Data salah.", "danger");
+            }
+          },
+          function(err) {
+            toggleLoading(false);
+            showToast("Masalah Koneksi", err ? err.toString() : "Koneksi terputus.", "danger");
+          }
+        );
+      }
+    };
+
+    window.syncAppData = function syncAppData() {
+      if (isMockMode) {
+        // ... mock setup ...
+        setTimeout(function() {
+          renderApp();
+          toggleLoading(false);
+          showToast("Pratinjau Sandbox", "Aplikasi berjalan dalam mode simulasi.", "warning");
+        }, 400);
+      } else {
+        callBackendApi("getAllAppData", { role: activeUser.role, class: activeUser.class, nis_nip: activeUser.nis_nip },
+          function(res) {
+            if (res && res.success) {
+              appData = res;
+              renderApp();
+              toggleLoading(false);
+            } else {
+              toggleLoading(false);
+              showToast("Penyelarasan Gagal", (res && res.message) ? res.message : "Kesalahan tidak dikenal.", "danger");
+            }
+          },
+          function(err) {
+            toggleLoading(false);
+            showToast("Server Offline", err ? err.toString() : "Koneksi terputus.", "danger");
+          }
+        );
+      }
+    };
+
+    window.toggleLoading = function toggleLoading(show, message) {
+      var overlay = document.getElementById("loading-overlay");
+      var text = document.getElementById("loading-text");
+      if (show) {
+        if (message) text.textContent = message;
+        overlay.classList.remove("hidden");
+      } else {
+        overlay.classList.add("hidden");
+      }
+    };
+
+    window.showToast = function showToast(title, message, type) {
+      var container = document.getElementById("toast-container");
+      if (!container) return;
+      var bg = "bg-white dark:bg-slate-900 border-l-4 border-primary-500 shadow-xl";
+      var icon = '<i class="bi bi-info-circle-fill text-primary-500 text-lg"></i>';
+      
+      if (type === "success") {
+        bg = "bg-white dark:bg-slate-900 border-l-4 border-emerald-500 shadow-xl";
+        icon = '<i class="bi bi-check-circle-fill text-emerald-500 text-lg"></i>';
+      } else if (type === "danger" || type === "error") {
+        bg = "bg-white dark:bg-slate-900 border-l-4 border-red-500 shadow-xl";
+        icon = '<i class="bi bi-exclamation-triangle-fill text-red-500 text-lg"></i>';
+      } else if (type === "warning") {
+        bg = "bg-white dark:bg-slate-900 border-l-4 border-amber-500 shadow-xl";
+        icon = '<i class="bi bi-patch-exclamation-fill text-amber-500 text-lg"></i>';
+      }
+
+      var toastId = "toast_" + Math.floor(Math.random() * 10000);
+      var toastHtml = '<div id="' + toastId + '" class="p-4 rounded-2xl flex gap-3 items-start border border-slate-200 dark:border-slate-800/80 transition-all duration-300 translate-x-10 opacity-0 ' + bg + '">' +
+        icon +
+        '<div class="flex-1">' +
+          '<h4 class="font-extrabold text-xs text-slate-800 dark:text-white uppercase tracking-wider">' + title + '</h4>' +
+          '<p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">' + message + '</p>' +
+        '</div>' +
+        '<button onclick="document.getElementById(\'' + toastId + '\').remove()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white transition"><i class="bi bi-x-lg text-xs"></i></button>' +
+      '</div>';
+      
+      container.insertAdjacentHTML('beforeend', toastHtml);
+      
+      setTimeout(function() {
+        var el = document.getElementById(toastId);
+        if (el) el.classList.remove("translate-x-10", "opacity-0");
+      }, 50);
+
+      setTimeout(function() {
+        var el = document.getElementById(toastId);
+        if (el) {
+          el.classList.add("translate-x-10", "opacity-0");
+          setTimeout(function() { el.remove(); }, 300);
+        }
+      }, 5000);
+    };
+
+    window.openConfirmModal = function openConfirmModal(title, desc, callback) {
+      document.getElementById("confirm-modal-title").textContent = title;
+      document.getElementById("confirm-modal-desc").textContent = desc;
+      document.getElementById("modal-confirm").classList.remove("hidden");
+      confirmCallback = callback;
+    };
+
+    document.getElementById("btn-confirm-cancel").onclick = function() {
+      document.getElementById("modal-confirm").classList.add("hidden");
+      confirmCallback = null;
+    };
+
+    document.getElementById("btn-confirm-yes").onclick = function() {
+      document.getElementById("modal-confirm").classList.add("hidden");
+      if (confirmCallback) {
+        confirmCallback();
+      }
+      confirmCallback = null;
+    };
+
+    window.findById = function findById(arr, id) {
+      if (!arr) return null;
+      for (var i = 0; i < arr.length; i++) {
+        if (arr[i] && arr[i].id === id) return arr[i];
+      }
+      return null;
+    };
+
+    window.onload = function() {
+      document.addEventListener("submit", function(e) {
+        e.preventDefault();
+      });
+
+      var savedUser = localStorage.getItem("otopras_session");
+      if (savedUser && savedUser !== "null" && savedUser !== "undefined") {
+        try {
+          activeUser = JSON.parse(savedUser);
+          if (activeUser && activeUser.name) {
+            bootstrapApp();
+          } else {
+            localStorage.removeItem("otopras_session");
+            toggleLoading(false);
+          }
+        } catch (e) {
+          localStorage.removeItem("otopras_session");
+          toggleLoading(false);
+        }
+      } else {
+        toggleLoading(false);
+      }
+
+      var formLogin = document.getElementById("form-login");
+      if (formLogin) {
+        formLogin.addEventListener("submit", function(e) {
+          e.preventDefault();
+          handleLogin();
+        });
+      }
+
+      if (localStorage.getItem("theme") === "dark") {
+        document.documentElement.classList.add("dark");
+      }
+    };
+
+    window.handleLogin = function handleLogin() {
+      var userVal = document.getElementById("username").value.trim();
+      var passVal = document.getElementById("password").value;
+
+      if (!userVal || !passVal) {
+        showToast("Formulir Kosong", "Harap lengkapi isian Anda!", "warning");
+        return;
+      }
+
+      toggleLoading(true, "Memvalidasi kredensial login...");
+
+      if (isMockMode) {
+        setTimeout(function() {
+          var userObj = null;
+          if (userVal === "admin" && passVal === "admin123") {
+            userObj = { id: "USR-001", username: "admin", role: "Admin", name: "Super Admin Otomotif", nis_nip: "ADMIN-01", class: "Semua" };
+          } else if (userVal === "guru1" && passVal === "guru123") {
+            userObj = { id: "USR-002", username: "guru1", role: "Guru", name: "Supriyanto, S.Pd.", nis_nip: "19880312", class: "XI TO 1" };
+          } else if (userVal === "siswa1" && passVal === "siswa123") {
+            userObj = { id: "USR-003", username: "siswa1", role: "Siswa", name: "Rian Hidayat", nis_nip: "10293", class: "XI TO 1" };
+          }
+
+          if (userObj) {
+            activeUser = userObj;
+            localStorage.setItem("otopras_session", JSON.stringify(userObj));
+            bootstrapApp();
+            showToast("Sukses", "Selamat datang kembali, " + userObj.name, "success");
+          } else {
+            toggleLoading(false);
+            showToast("Akses Ditolak", "Kombinasi kredensial salah.", "danger");
+          }
+        }, 800);
+      } else {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res && res.success) {
+              activeUser = res.user;
+              localStorage.setItem("otopras_session", JSON.stringify(res.user));
+              bootstrapApp();
+              showToast("Sukses", "Selamat datang kembali, " + res.user.name, "success");
+            } else {
+              toggleLoading(false);
+              showToast("Akses Ditolak", (res && res.message) ? res.message : "Data salah.", "danger");
+            }
+          })
+          .withFailureHandler(function(err) {
+            toggleLoading(false);
+            showToast("Masalah Koneksi", err ? err.toString() : "Koneksi terputus.", "danger");
+          })
+          .login({ username: userVal, password: passVal });
+      }
+    };
+
+    window.handleLogout = function handleLogout() {
+      toggleLoading(true, "Mengakhiri sesi aman...");
+      localStorage.removeItem("otopras_session");
+      activeUser = null;
+      
+      setTimeout(function() {
+        document.getElementById("app-container").classList.add("hidden");
+        document.getElementById("login-container").classList.remove("hidden");
+        toggleLoading(false);
+        showToast("Keluar Sesi", "Anda telah keluar dengan aman.", "info");
+      }, 500);
+    };
+
+    window.bootstrapApp = function bootstrapApp() {
+      if (!activeUser || !activeUser.name) return;
+      toggleLoading(true, "Sinkronisasi database sekolah...");
+      document.getElementById("login-container").classList.add("hidden");
+      document.getElementById("app-container").classList.remove("hidden");
+
+      document.getElementById("welcome-user-name").textContent = activeUser.name;
+      document.getElementById("user-name-desktop").textContent = activeUser.name;
+      document.getElementById("user-role-desktop").textContent = activeUser.role;
+      document.getElementById("user-name-header").textContent = activeUser.name;
+      document.getElementById("user-role-header").textContent = activeUser.role;
+      document.getElementById("avatar-desktop").textContent = activeUser.name.substring(0,1);
+      document.getElementById("avatar-header").textContent = activeUser.name.substring(0,1);
+
+      var setMenuDT = document.getElementById("btn-menu-settings-dt");
+      var addJobsheetBtn = document.getElementById("btn-add-jobsheet");
+      var addWpBtn = document.getElementById("btn-submit-wp");
+      var addLapBtn = document.getElementById("btn-submit-laporan");
+      var addCertBtn = document.getElementById("btn-add-cert");
+      var addNilaiBtn = document.getElementById("btn-add-nilai");
+      var certFilterWrapper = document.getElementById("cert-filter-wrapper");
+
+      if (activeUser.role === "Siswa") {
+        if (setMenuDT) setMenuDT.classList.add("hidden");
+        if (addJobsheetBtn) addJobsheetBtn.classList.add("hidden");
+        if (addWpBtn) addWpBtn.classList.remove("hidden");
+        if (addLapBtn) addLapBtn.classList.remove("hidden");
+        if (addCertBtn) addCertBtn.classList.add("hidden");
+        if (addNilaiBtn) addNilaiBtn.classList.add("hidden");
+        if (certFilterWrapper) certFilterWrapper.classList.add("hidden");
+      } else {
+        if (setMenuDT) setMenuDT.classList.remove("hidden");
+        if (addJobsheetBtn) addJobsheetBtn.classList.remove("hidden");
+        if (addWpBtn) addWpBtn.classList.add("hidden");
+        if (addLapBtn) addLapBtn.classList.add("hidden");
+        if (addCertBtn) addCertBtn.classList.remove("hidden");
+        if (addNilaiBtn) addNilaiBtn.classList.remove("hidden");
+        if (certFilterWrapper) certFilterWrapper.classList.remove("hidden");
+      }
+
+      syncAppData();
+    };
+
+    window.syncAppData = function syncAppData() {
+      if (isMockMode) {
+        appData.settings = {
+          school_name: "SMK Boedi Oetomo 2 Gandrungmangu",
+          dept_name: "Teknik Otomotif",
+          school_address: "Jl. Raya Gandrungmangu No. 22, Cilacap, Jawa Tengah",
+          principal_name: "Drs. Bambang Hermawan",
+          principal_nip: "197508122005011002",
+          teacher_name: "Supriyanto, S.Pd.",
+          teacher_nip: "19880312 201504 1 002",
+          school_logo: "",
+          dept_logo: "",
+          signature_teacher: "",
+          signature_principal: "",
+          stamp_school: "",
+          cert_desc: "Telah dinyatakan LULUS DAN KOMPETEN pada pengujian kelayakan kerja mandiri, penyusunan Work Preparation, kelancaran unjuk kerja praktik, serta kelengkapan pelaporan hasil akhir untuk topik kompetensi:"
+        };
+
+        appData.jobsheets = [
+          { id: "JOB-01", code: "TO-01", name: "Overhaul Engine Kijang 5K", competency: "Teknik Otomotif", class: "XI TO 1", semester: "Ganjil", description: "Melakukan overhaul mesin Kijang 5K, pembongkaran, pengukuran kompresi, celah katup, dan perakitan kembali.", link: "https://drive.google.com", status: "Aktif" },
+          { id: "JOB-02", code: "TO-02", name: "Penyetelan Rem Tromol", competency: "Teknik Otomotif", class: "XI TO 2", semester: "Ganjil", description: "Menyetel rem tromol belakang dan depan secara presisi.", link: "https://drive.google.com", status: "Aktif" }
+        ];
+
+        appData.students = [
+          { nis: "10293", name: "Rian Hidayat", class: "XI TO 1" },
+          { nis: "10294", name: "Ahmad Dani", class: "XI TO 2" },
+          { nis: "252620848", name: "Dede Furkon Azidin", class: "XI TO 1" }
+        ];
+
+        appData.wp = [
+          { id: "WP-001", student_name: "Rian Hidayat", nis: "10293", class: "XI TO 1", jobsheet_id: "JOB-01", jobsheet_title: "Overhaul Engine Kijang 5K", purpose: "Menyetel katup mesin", tools: "Kunci T", materials: "Gasket", steps: "Buka", apd: "Wearpack", k3: "Aman", duration: "120", wp_pdf: "", wp_photo: "", status: "Menunggu", notes: "", score: "0", timestamp: "12/05/2026" }
+        ];
+
+        appData.laporan = [
+          { id: "LAP-001", student_name: "Rian Hidayat", nis: "10293", class: "XI TO 1", jobsheet_id: "JOB-01", jobsheet_title: "Overhaul Engine Kijang 5K", title: "Laporan Overhaul Kijang", pdf_link: "https://drive.google.com", photo: "", date: "2026-05-15", status: "Menunggu", comments: "", score: "0", timestamp: "15/05/2026" }
+        ];
+
+        appData.nilai = [
+          { id: "NIL-01", nis: "10293", name: "Rian Hidayat", class: "XI TO 1", jobsheet_id: "JOB-01", jobsheet_title: "Overhaul Engine Kijang 5K", tp1: "85", tp2: "80", tp3: "90", tp4: "85", tp5: "88", tp6: "85", ats: "80", aas: "85", wp_score: "88", practice_score: "92", report_score: "90", final_score: "88.5", grade: "A" }
+        ];
+
+        appData.sertifikat = [
+          { id: "CERT-001", cert_number: "CERT/TO/001/2026-12938", student_name: "Rian Hidayat", nis: "10293", competency: "Teknik Otomotif", jobsheet_title: "Overhaul Engine Kijang 5K", final_score: "88.5", date: "2026-05-16", qr_code: "" }
+        ];
+
+        setTimeout(function() {
+          renderApp();
+          toggleLoading(false);
+          showToast("Pratinjau Sandbox", "Aplikasi berjalan dalam mode simulasi.", "warning");
+        }, 400);
+      } else {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res && res.success) {
+              appData = res;
+              renderApp();
+              toggleLoading(false);
+            } else {
+              toggleLoading(false);
+              showToast("Penyelarasan Gagal", (res && res.message) ? res.message : "Kesalahan tidak dikenal.", "danger");
+            }
+          })
+          .withFailureHandler(function(err) {
+            toggleLoading(false);
+            showToast("Server Offline", err ? err.toString() : "Koneksi terputus.", "danger");
+          })
+          .getAllAppData(activeUser.role, activeUser.class, activeUser.nis_nip);
+      }
+    };
+
+    window.renderApp = function renderApp() {
+      document.getElementById("stat-jobsheets").textContent = appData.jobsheets ? appData.jobsheets.length : 0;
+      document.getElementById("stat-wp").textContent = appData.wp ? appData.wp.filter(function(w){ return w.status === "Disetujui"; }).length : 0;
+      document.getElementById("stat-laporan").textContent = appData.laporan ? appData.laporan.length : 0;
+      document.getElementById("stat-sertifikat").textContent = appData.sertifikat ? appData.sertifikat.length : 0;
+
+      renderQuickActions();
+      renderJobsheetCards();
+      renderWPCards();
+      renderLaporanCards();
+      
+      populateCertFilters();
+      renderSertifikatCards();
+      
+      populateNilaiFilters();
+      renderNilaiTable();
+      fillSettingsForm();
+    };
+
+    window.renderQuickActions = function renderQuickActions() {
+      var grid = document.getElementById("quick-actions-grid");
+      if (!grid) return;
+      grid.innerHTML = "";
+      
+      var buttons = [];
+      if (activeUser.role === "Siswa") {
+        buttons = [
+          { title: "Kirim Rencana", icon: "bi-send-fill bg-primary-600/10 text-primary-600", action: "switchView('wp')" },
+          { title: "Kirim Laporan", icon: "bi-cloud-arrow-up-fill bg-indigo-500/10 text-indigo-500", action: "switchView('laporan')" },
+          { title: "E-Sertifikat", icon: "bi-patch-check-fill bg-amber-500/10 text-amber-500", action: "switchView('sertifikat')" },
+          { title: "Transkrip Nilai", icon: "bi-mortarboard-fill bg-emerald-500/10 text-emerald-500", action: "switchView('nilai')" }
+        ];
+      } else {
+        buttons = [
+          { title: "Kelola Modul", icon: "bi-file-earmark-ruled-fill bg-primary-600/10 text-primary-600", action: "switchView('jobsheet')" },
+          { title: "Validasi Rencana", icon: "bi-tools bg-indigo-500/10 text-indigo-500", action: "switchView('wp')" },
+          { title: "Penilaian Praktik", icon: "bi-mortarboard-fill bg-emerald-500/10 text-emerald-500", action: "switchView('nilai')" },
+          { title: "Seting Lembaga", icon: "bi-sliders bg-amber-500/10 text-amber-500", action: "switchView('settings')" }
+        ];
+      }
+
+      var tempStr = "";
+      for (var i = 0; i < buttons.length; i++) {
+        var btn = buttons[i];
+        tempStr += '<button onclick="' + btn.action + '" class="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-2xl shadow-sm hover:shadow-md transition text-left flex items-center gap-3">' +
+          '<div class="w-10 h-10 rounded-xl flex items-center justify-center text-sm ' + btn.icon + '">' +
+            '<i class="bi ' + btn.icon.split(" ")[0] + '"></i>' +
+          '</div>' +
+          '<div>' +
+            '<h4 class="text-xs font-black text-slate-800 dark:text-white uppercase leading-none">' + btn.title + '</h4>' +
+            '<span class="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1 block">Akses Pintar</span>' +
+          '</div>' +
+        '</button>';
+      }
+      grid.innerHTML = tempStr;
+    };
+
+    window.switchView = function switchView(viewName) {
+      var views = ["beranda", "jobsheet", "wp", "laporan", "sertifikat", "nilai", "settings"];
+      for (var i = 0; i < views.length; i++) {
+        var el = document.getElementById("view-" + views[i]);
+        if (el) el.classList.add("hidden");
+      }
+
+      var target = document.getElementById("view-" + viewName);
+      if (target) target.classList.remove("hidden");
+
+      for (var j = 0; j < views.length; j++) {
+        var m = views[j];
+        var btnDt = document.getElementById("btn-menu-" + m + "-dt");
+        var btnMb = document.getElementById("btn-menu-" + m + "-mb");
+
+        if (btnDt) {
+          var isHiddenMenu = (m === "settings" && activeUser && activeUser.role === "Siswa");
+          if (m === viewName) {
+            btnDt.className = "flex items-center w-full px-4 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition gap-3 bg-slate-800 text-white";
+          } else {
+            btnDt.className = "flex items-center w-full px-4 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition gap-3 text-slate-400 hover:bg-slate-800 hover:text-white";
+          }
+          if (isHiddenMenu) {
+            btnDt.classList.add("hidden");
+          } else {
+            btnDt.classList.remove("hidden");
+          }
+        }
+
+        if (btnMb) {
+          if (m === viewName) {
+            btnMb.className = "flex flex-col items-center gap-0.5 text-primary-500 transition";
+          } else {
+            btnMb.className = "flex flex-col items-center gap-0.5 text-slate-500 hover:text-white transition";
+          }
+        }
+      }
+
+      var titles = {
+        beranda: "Beranda Utama",
+        jobsheet: "Daftar Modul Jobsheet",
+        wp: "Work Preparation (WP)",
+        laporan: "Berkas Laporan Akhir",
+        sertifikat: "E-Sertifikat Kelayakan",
+        nilai: "Transkrip Penilaian Kejuruan",
+        settings: "Konfigurasi Lembaga"
+      };
+      document.getElementById("header-title").textContent = titles[viewName] || "Dashboard";
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    window.renderJobsheetCards = function renderJobsheetCards() {
+      var grid = document.getElementById("jobsheet-cards-grid");
+      if (!grid) return;
+      grid.innerHTML = "";
+      
+      var filteredJobs = appData.jobsheets || [];
+      if (activeUser.role === "Siswa") {
+        filteredJobs = (appData.jobsheets || []).filter(function(j) {
+          var jClass = j.class ? String(j.class).toUpperCase() : "";
+          var uClass = activeUser.class ? String(activeUser.class).toUpperCase() : "";
+          return j.status === "Aktif" && (jClass === "SEMUA" || jClass === uClass);
+        });
+      }
+
+      if (filteredJobs.length === 0) {
+        grid.innerHTML = '<div class="col-span-full py-12 text-center text-slate-400 space-y-2">' +
+          '<i class="bi bi-file-earmark-ruled-fill text-5xl"></i>' +
+          '<p class="text-xs font-bold">Belum ada unit modul Jobsheet aktif untuk kelas Anda.</p>' +
+        '</div>';
+        return;
+      }
+
+      var tempStr = "";
+      for (var i = 0; i < filteredJobs.length; i++) {
+        var job = filteredJobs[i];
+        var actionBtns = "";
+        if (activeUser.role !== "Siswa") {
+          actionBtns = '<div class="flex gap-2 justify-end pt-3 border-t border-slate-100 dark:border-slate-800">' +
+            '<button onclick="window.openEditJobsheet(\'' + job.id + '\')" class="px-2.5 py-1.5 bg-primary-50 text-primary-600 hover:bg-primary-100 font-bold text-[10px] rounded-lg transition">Edit</button>' +
+          '</div>';
+        }
+
+        tempStr += '<div class="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm hover:shadow-md transition space-y-3">' +
+          '<div class="flex justify-between items-start">' +
+            '<span class="px-2.5 py-1 bg-primary-600/10 text-primary-600 rounded-lg text-[9px] font-black uppercase tracking-wider">' + (job.code || "JOB") + '</span>' +
+            '<span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">' + (job.class || "Semua") + '</span>' +
+          '</div>' +
+          '<div>' +
+            '<h4 class="font-extrabold text-slate-800 dark:text-white text-xs uppercase tracking-wide leading-tight">' + (job.name || "-") + '</h4>' +
+            '<p class="text-[10px] text-slate-400 font-medium mt-1">' + (job.description || "") + '</p>' +
+          '</div>' +
+          '<div class="flex justify-between items-center text-[10px]">' +
+            '<span class="font-bold text-slate-400">Semester ' + (job.semester || "Ganjil") + '</span>' +
+            '<a href="' + (job.link || "https://drive.google.com") + '" target="_blank" class="text-primary-500 font-bold hover:underline flex items-center gap-1"><i class="bi bi-file-earmark-pdf-fill"></i> Buku Manual</a>' +
+          '</div>' +
+          actionBtns +
+        '</div>';
+      }
+      grid.innerHTML = tempStr;
+    };
+
+    window.renderWPCards = function renderWPCards() {
+      var grid = document.getElementById("wp-cards-grid");
+      if (!grid) return;
+      grid.innerHTML = "";
+      
+      var filteredWp = appData.wp || [];
+      if (activeUser.role === "Siswa") {
+        filteredWp = (appData.wp || []).filter(function(w) { 
+          return w && String(w.nis).trim() === String(activeUser.nis_nip).trim(); 
+        });
+      } else if (activeUser.role === "Guru") {
+        filteredWp = (appData.wp || []).filter(function(w) {
+          if (!w) return false;
+          var wClass = w.class ? String(w.class).trim().toUpperCase() : "";
+          var uClass = activeUser.class ? String(activeUser.class).trim().toUpperCase() : "";
+          return uClass === "SEMUA" || wClass === uClass;
+        });
+      }
+
+      if (filteredWp.length === 0) {
+        grid.innerHTML = '<div class="col-span-full py-12 text-center text-slate-400 space-y-2">' +
+          '<i class="bi bi-tools text-5xl"></i>' +
+          '<p class="text-xs font-bold">Belum ada pengajuan lembar rencana persiapan kerja.</p>' +
+        '</div>';
+        return;
+      }
+
+      var tempStr = "";
+      for (var i = 0; i < filteredWp.length; i++) {
+        var w = filteredWp[i];
+        if (!w) continue;
+        
+        var statusBadge = '<span class="px-2.5 py-1 bg-amber-500/10 text-amber-500 rounded-lg text-[9px] font-black uppercase tracking-wider">Menunggu</span>';
+        if (w.status === "Disetujui") {
+          statusBadge = '<span class="px-2.5 py-1 bg-emerald-500/10 text-emerald-500 rounded-lg text-[9px] font-black uppercase tracking-wider">Disetujui</span>';
+        } else if (w.status === "Ditolak") {
+          statusBadge = '<span class="px-2.5 py-1 bg-red-500/10 text-red-500 rounded-lg text-[9px] font-black uppercase tracking-wider">Ditolak</span>';
+        }
+
+        var photoThumb = (w.wp_photo && w.wp_photo.length > 10) ?
+          '<div class="mt-2"><img src="' + w.wp_photo + '" onclick="window.open(\'' + w.wp_photo + '\', \'_blank\')" class="w-full h-36 object-cover rounded-2xl border border-slate-200 dark:border-slate-800 cursor-pointer hover:opacity-90 transition" title="Klik untuk perbesar foto"></div>' : '';
+
+        var notesHtml = w.notes ?
+          '<div class="p-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-[10px] text-amber-600 dark:text-amber-400 font-medium space-y-0.5">' +
+            '<span class="font-extrabold uppercase tracking-wider block text-[8px] text-amber-500"><i class="bi bi-chat-left-text-fill mr-1"></i>Catatan Evaluasi Guru:</span>' +
+            '<p class="leading-relaxed">' + w.notes + '</p>' +
+          '</div>' : '';
+
+        var reviewBtn = "";
+        if (activeUser.role !== "Siswa") {
+          reviewBtn = '<button onclick="window.openReviewWPModal(\'' + w.id + '\')" class="px-2.5 py-1.5 bg-primary-600 text-white font-extrabold text-[10px] rounded-lg hover:bg-primary-500 transition">Tinjau & Validasi</button>';
+        }
+
+        var deleteBtn = '<button onclick="window.deleteWpHandler(\'' + w.id + '\')" class="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-[10px] rounded-lg transition flex items-center gap-1"><i class="bi bi-trash-fill"></i> Hapus</button>';
+
+        tempStr += '<div class="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm hover:shadow-md transition space-y-3">' +
+          '<div class="flex justify-between items-center">' +
+            statusBadge +
+            '<span class="text-[9px] text-slate-400 font-mono">' + (w.timestamp || "-") + '</span>' +
+          '</div>' +
+          '<div>' +
+            '<span class="text-[8px] font-black uppercase text-slate-400 tracking-widest">Siswa: ' + (w.student_name || "-") + ' (' + (w.nis || "-") + ')</span>' +
+            '<h4 class="font-extrabold text-slate-800 dark:text-white text-xs uppercase tracking-wide leading-tight mt-0.5">' + (w.jobsheet_title || "-") + '</h4>' +
+            '<p class="text-[10px] text-slate-400 font-medium mt-1">Tujuan: ' + (w.purpose || "-") + '</p>' +
+          '</div>' +
+          photoThumb +
+          notesHtml +
+          '<div class="flex justify-between items-center border-t border-slate-100 dark:border-slate-800 pt-3">' +
+            '<span class="text-[10px] font-black text-primary-500">Skor: ' + (w.score || "-") + '</span>' +
+            '<div class="flex gap-2">' + deleteBtn + reviewBtn + '</div>' +
+          '</div>' +
+        '</div>';
+      }
+      grid.innerHTML = tempStr;
+    };
+
+    window.renderLaporanCards = function renderLaporanCards() {
+      var grid = document.getElementById("laporan-cards-grid");
+      if (!grid) return;
+      grid.innerHTML = "";
+      
+      var filteredLap = appData.laporan || [];
+      if (activeUser.role === "Siswa") {
+        filteredLap = (appData.laporan || []).filter(function(l) { 
+          return l && String(l.nis).trim() === String(activeUser.nis_nip).trim(); 
+        });
+      } else if (activeUser.role === "Guru") {
+        filteredLap = (appData.laporan || []).filter(function(l) {
+          if (!l) return false;
+          var lClass = l.class ? String(l.class).trim().toUpperCase() : "";
+          var uClass = activeUser.class ? String(activeUser.class).trim().toUpperCase() : "";
+          return uClass === "SEMUA" || lClass === uClass;
+        });
+      }
+
+      if (filteredLap.length === 0) {
+        grid.innerHTML = '<div class="col-span-full py-12 text-center text-slate-400 space-y-2">' +
+          '<i class="bi bi-file-earmark-text-fill text-5xl"></i>' +
+          '<p class="text-xs font-bold">Belum ada berkas pelaporan yang dikirimkan.</p>' +
+        '</div>';
+        return;
+      }
+
+      var tempStr = "";
+      for (var i = 0; i < filteredLap.length; i++) {
+        var l = filteredLap[i];
+        if (!l) continue;
+
+        var statusBadge = '<span class="px-2.5 py-1 bg-amber-500/10 text-amber-500 rounded-lg text-[9px] font-black uppercase tracking-wider">Menunggu</span>';
+        if (l.status === "Disetujui") {
+          statusBadge = '<span class="px-2.5 py-1 bg-emerald-500/10 text-emerald-500 rounded-lg text-[9px] font-black uppercase tracking-wider">Disetujui</span>';
+        } else if (l.status === "Ditolak") {
+          statusBadge = '<span class="px-2.5 py-1 bg-red-500/10 text-red-500 rounded-lg text-[9px] font-black uppercase tracking-wider">Ditolak</span>';
+        }
+
+        var photoThumb = (l.photo && l.photo.length > 10) ?
+          '<div class="mt-2"><img src="' + l.photo + '" onclick="window.open(\'' + l.photo + '\', \'_blank\')" class="w-full h-36 object-cover rounded-2xl border border-slate-200 dark:border-slate-800 cursor-pointer hover:opacity-90 transition" title="Klik untuk perbesar foto"></div>' : '';
+
+        var commentsHtml = l.comments ?
+          '<div class="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl text-[10px] text-indigo-600 dark:text-indigo-400 font-medium space-y-0.5">' +
+            '<span class="font-extrabold uppercase tracking-wider block text-[8px] text-indigo-500"><i class="bi bi-chat-left-text-fill mr-1"></i>Catatan Evaluasi Guru:</span>' +
+            '<p class="leading-relaxed">' + l.comments + '</p>' +
+          '</div>' : '';
+
+        var reviewBtn = "";
+        if (activeUser.role !== "Siswa") {
+          reviewBtn = '<button onclick="window.openReviewLaporanModal(\'' + l.id + '\')" class="px-2.5 py-1.5 bg-primary-600 text-white font-extrabold text-[10px] rounded-lg hover:bg-primary-500 transition">Tinjau Berkas</button>';
+        }
+
+        var deleteBtn = '<button onclick="window.deleteLaporanHandler(\'' + l.id + '\')" class="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-[10px] rounded-lg transition flex items-center gap-1"><i class="bi bi-trash-fill"></i> Hapus</button>';
+
+        tempStr += '<div class="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm hover:shadow-md transition space-y-3">' +
+          '<div class="flex justify-between items-center">' +
+            statusBadge +
+            '<span class="text-[9px] text-slate-400 font-mono">' + (l.timestamp || "-") + '</span>' +
+          '</div>' +
+          '<div>' +
+            '<span class="text-[8px] font-black uppercase text-slate-400 tracking-widest">Siswa: ' + (l.student_name || "-") + ' (' + (l.nis || "-") + ')</span>' +
+            '<h4 class="font-extrabold text-slate-800 dark:text-white text-xs uppercase tracking-wide leading-tight mt-0.5">' + (l.jobsheet_title || "-") + '</h4>' +
+            '<p class="text-[10px] text-slate-400 font-medium mt-1">Laporan: ' + (l.title || "-") + '</p>' +
+          '</div>' +
+          photoThumb +
+          commentsHtml +
+          '<div class="flex justify-between items-center border-t border-slate-100 dark:border-slate-800 pt-3">' +
+            '<span class="text-[10px] font-black text-primary-500">Skor: ' + (l.score || "-") + '</span>' +
+            '<div class="flex gap-2">' + deleteBtn + reviewBtn + '</div>' +
+          '</div>' +
+        '</div>';
+      }
+      grid.innerHTML = tempStr;
+    };
+
+    window.populateCertFilters = function populateCertFilters() {
+      var selClass = document.getElementById("filter-cert-class");
+      if (!selClass) return;
+
+      var currentVal = selClass.value || "SEMUA";
+      var kelasSet = {};
+
+      if (appData.students) {
+        for (var i = 0; i < appData.students.length; i++) {
+          if (appData.students[i].class) {
+            kelasSet[appData.students[i].class] = true;
+          }
+        }
+      }
+
+      var html = '<option value="SEMUA">Semua Kelas</option>';
+      for (var k in kelasSet) {
+        html += '<option value="' + k + '">' + k + '</option>';
+      }
+      selClass.innerHTML = html;
+      selClass.value = currentVal;
+      if (selClass.selectedIndex === -1) selClass.value = "SEMUA";
+    };
+
+    window.renderSertifikatCards = function renderSertifikatCards() {
+      var grid = document.getElementById("sertifikat-cards-grid");
+      var statsText = document.getElementById("cert-stats-text");
+      if (!grid) return;
+      grid.innerHTML = "";
+      
+      var selClass = document.getElementById("filter-cert-class");
+      var targetClass = selClass ? selClass.value : "SEMUA";
+
+      var certs = appData.sertifikat || [];
+      var filteredCert = [];
+
+      for (var i = 0; i < certs.length; i++) {
+        var cert = certs[i];
+        if (!cert) continue;
+
+        if (activeUser.role === "Siswa") {
+          if (String(cert.nis).trim() !== String(activeUser.nis_nip).trim()) continue;
+        } else if (activeUser.role === "Guru") {
+          var sClass = "";
+          if (appData.students) {
+            for (var s = 0; s < appData.students.length; s++) {
+              if (String(appData.students[s].nis).trim() === String(cert.nis).trim()) {
+                sClass = appData.students[s].class;
+                break;
+              }
+            }
+          }
+          var uClass = activeUser.class ? String(activeUser.class).trim().toUpperCase() : "";
+          if (uClass !== "SEMUA" && sClass.toUpperCase() !== uClass) continue;
+          if (targetClass !== "SEMUA" && sClass !== targetClass) continue;
+        } else {
+          if (targetClass !== "SEMUA") {
+            var sClassAll = "";
+            if (appData.students) {
+              for (var sa = 0; sa < appData.students.length; sa++) {
+                if (String(appData.students[sa].nis).trim() === String(cert.nis).trim()) {
+                  sClassAll = appData.students[sa].class;
+                  break;
+                }
+              }
+            }
+            if (sClassAll !== targetClass) continue;
+          }
+        }
+
+        filteredCert.push(cert);
+      }
+
+      if (statsText) {
+        statsText.textContent = "Menampilkan " + filteredCert.length + " Sertifikat";
+      }
+
+      if (filteredCert.length === 0) {
+        grid.innerHTML = '<div class="col-span-full py-12 text-center text-slate-400 space-y-2">' +
+          '<i class="bi bi-patch-minus text-5xl"></i>' +
+          '<p class="text-xs font-bold">Belum ada portofolio E-Sertifikat yang diterbitkan.</p>' +
+        '</div>';
+        return;
+      }
+
+      var tempStr = "";
+      for (var j = 0; j < filteredCert.length; j++) {
+        var cert = filteredCert[j];
+        if (!cert) continue;
+
+        var actionButtons = '<div class="flex flex-wrap gap-1.5 justify-end">';
+        if (activeUser.role !== "Siswa") {
+          actionButtons += '<button onclick="window.deleteCertificateHandler(\'' + cert.id + '\')" class="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-[10.5px] rounded-xl transition flex items-center gap-1"><i class="bi bi-trash-fill"></i> Batalkan</button>';
+        }
+        actionButtons += '<button onclick="window.downloadCertificateDirect(\'' + cert.id + '\')" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-[10.5px] rounded-xl transition flex items-center gap-1"><i class="bi bi-file-earmark-pdf-fill"></i> Unduh</button>';
+        actionButtons += '<button onclick="window.openCertificatePreview(\'' + cert.id + '\')" class="px-2.5 py-1.5 bg-primary-600 hover:bg-primary-500 text-white font-extrabold text-[10.5px] rounded-xl transition flex items-center gap-1"><i class="bi bi-eye-fill"></i> Pratinjau</button>';
+        actionButtons += '</div>';
+
+        tempStr += '<div class="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm hover:shadow-md transition space-y-4 relative overflow-hidden">' +
+          '<div class="absolute top-0 right-0 w-16 h-16 bg-amber-500/10 rounded-bl-full flex items-center justify-center text-amber-600"><i class="bi bi-patch-check-fill text-lg"></i></div>' +
+          '<div>' +
+            '<span class="text-[9px] text-slate-400 font-bold uppercase block">' + (cert.cert_number || "-") + '</span>' +
+            '<h4 class="font-black text-slate-800 dark:text-white text-sm tracking-wide mt-1 uppercase">' + (cert.student_name || "-") + '</h4>' +
+            '<p class="text-[10px] text-slate-400 font-medium">NIS: ' + (cert.nis || "-") + ' | Kompeten: <span class="text-amber-600 font-bold">' + (cert.jobsheet_title || "-") + '</span></p>' +
+          '</div>' +
+          '<div class="flex justify-between items-center border-t border-slate-100 dark:border-slate-800/80 pt-3">' +
+            '<span class="text-xs font-black text-primary-600">Skor: ' + (cert.final_score || "-") + '</span>' +
+            actionButtons +
+          '</div>' +
+        '</div>';
+      }
+      grid.innerHTML = tempStr;
+    };
+
+    window.populateNilaiFilters = function populateNilaiFilters() {
+      var selKelas = document.getElementById("filter-nilai-kelas");
+      var selJobsheet = document.getElementById("filter-nilai-jobsheet");
+      if (!selKelas || !selJobsheet) return;
+
+      var currentKelas = selKelas.value || "SEMUA";
+      var currentJob = selJobsheet.value || "SEMUA";
+
+      var kelasSet = {};
+      var jobsheetSet = {};
+
+      var rawList = appData.nilai || [];
+      for (var i = 0; i < rawList.length; i++) {
+        var n = rawList[i];
+        if (!n) continue;
+
+        if (activeUser.role === "Guru") {
+          var nClass = n.class ? String(n.class).trim().toUpperCase() : "";
+          var uClass = activeUser.class ? String(activeUser.class).trim().toUpperCase() : "";
+          if (uClass !== "SEMUA" && nClass !== uClass) continue;
+        }
+
+        if (n.class) kelasSet[n.class] = true;
+        if (n.jobsheet_title) jobsheetSet[n.jobsheet_title] = true;
+      }
+
+      var kelasHtml = '<option value="SEMUA">Semua Kelas</option>';
+      for (var k in kelasSet) {
+        kelasHtml += '<option value="' + k + '">' + k + '</option>';
+      }
+      selKelas.innerHTML = kelasHtml;
+      selKelas.value = currentKelas;
+      if (selKelas.selectedIndex === -1) selKelas.value = "SEMUA";
+
+      var jobHtml = '<option value="SEMUA">Semua Jobsheet yang Diampu</option>';
+      for (var j in jobsheetSet) {
+        jobHtml += '<option value="' + j + '">' + j + '</option>';
+      }
+      selJobsheet.innerHTML = jobHtml;
+      selJobsheet.value = currentJob;
+      if (selJobsheet.selectedIndex === -1) selJobsheet.value = "SEMUA";
+    };
+
+    window.renderNilaiTable = function renderNilaiTable() {
+      var rows = document.getElementById("nilai-table-rows");
+      if (!rows) return;
+
+      var selKelas = document.getElementById("filter-nilai-kelas");
+      var selJobsheet = document.getElementById("filter-nilai-jobsheet");
+      var statsText = document.getElementById("filter-stats-text");
+
+      var targetKelas = selKelas ? selKelas.value : "SEMUA";
+      var targetJobsheet = selJobsheet ? selJobsheet.value : "SEMUA";
+
+      var list = appData.nilai || [];
+      var filtered = [];
+
+      for (var i = 0; i < list.length; i++) {
+        var n = list[i];
+        if (!n) continue;
+
+        if (activeUser.role === "Siswa") {
+          if (String(n.nis).trim() !== String(activeUser.nis_nip).trim()) continue;
+        } else if (activeUser.role === "Guru") {
+          var nClass = n.class ? String(n.class).trim().toUpperCase() : "";
+          var uClass = activeUser.class ? String(activeUser.class).trim().toUpperCase() : "";
+          if (uClass !== "SEMUA" && nClass !== uClass) continue;
+        }
+
+        if (targetKelas !== "SEMUA" && n.class !== targetKelas) continue;
+        if (targetJobsheet !== "SEMUA" && n.jobsheet_title !== targetJobsheet) continue;
+
+        filtered.push(n);
+      }
+
+      if (statsText) {
+        statsText.textContent = "Menampilkan " + filtered.length + " data";
+      }
+
+      if (filtered.length === 0) {
+        rows.innerHTML = '<tr><td colspan="9" class="p-8 text-center text-slate-400 font-bold text-xs uppercase">Tidak ada transkrip nilai yang sesuai filter.</td></tr>';
+        return;
+      }
+
+      var bufferHtml = "";
+      for (var j = 0; j < filtered.length; j++) {
+        var record = filtered[j];
+        
+        var actionBtn = '<span class="text-[10px] font-bold text-slate-400">Tidak ada Akses</span>';
+        if (activeUser.role !== "Siswa") {
+          actionBtn = '<div class="flex gap-2 justify-end">' +
+            '<button onclick="window.openGradingModal(\'' + record.id + '\')" class="p-1.5 bg-primary-50 hover:bg-primary-100 text-primary-600 rounded-lg transition" title="Edit Nilai"><i class="bi bi-pencil-square"></i></button>' +
+            '<button onclick="window.deleteNilaiHandler(\'' + record.id + '\')" class="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition" title="Hapus Nilai"><i class="bi bi-trash-fill"></i></button>' +
+          '</div>';
+        }
+
+        var avgTp = (parseFloat(record.tp1 || 0) + parseFloat(record.tp2 || 0) + parseFloat(record.tp3 || 0) + parseFloat(record.tp4 || 0) + parseFloat(record.tp5 || 0) + parseFloat(record.tp6 || 0)) / 6;
+        if (isNaN(avgTp)) avgTp = 0;
+
+        bufferHtml += '<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition">' +
+          '<td class="p-4">' +
+            '<p class="font-extrabold text-slate-800 dark:text-white uppercase leading-none">' + (record.name || "-") + '</p>' +
+            '<span class="text-[9px] text-slate-400 font-bold">NIS: ' + (record.nis || "-") + ' | Kelas: ' + (record.class || "-") + '</span>' +
+          '</td>' +
+          '<td class="p-4 font-bold text-slate-600 dark:text-slate-300 uppercase">' + (record.jobsheet_title || "-") + '</td>' +
+          '<td class="p-4 text-center font-semibold text-slate-600 dark:text-slate-400">' + avgTp.toFixed(1) + '</td>' +
+          '<td class="p-4 text-center font-semibold text-slate-600 dark:text-slate-400">' + (record.wp_score || "0") + '</td>' +
+          '<td class="p-4 text-center font-semibold text-slate-600 dark:text-slate-400">' + (record.practice_score || "0") + '</td>' +
+          '<td class="p-4 text-center font-semibold text-slate-600 dark:text-slate-400">' + (record.report_score || "0") + '</td>' +
+          '<td class="p-4 text-center font-black bg-primary-600/5 text-primary-600 dark:text-primary-400 text-sm">' + (record.final_score || "0.0") + '</td>' +
+          '<td class="p-4 text-center"><span class="px-2.5 py-1 bg-amber-500/10 text-amber-600 rounded-lg font-black text-[10px] uppercase">' + (record.grade || "E") + '</span></td>' +
+          '<td class="p-4 text-right">' + actionBtn + '</td>' +
+        '</tr>';
+      }
+      rows.innerHTML = bufferHtml;
+    };
+
+    window.fillSettingsForm = function fillSettingsForm() {
+      var s = appData.settings;
+      if (!s) return;
+      document.getElementById("setting-school-name").value = s.school_name || "";
+      document.getElementById("setting-dept-name").value = s.dept_name || "";
+      document.getElementById("setting-school-address").value = s.school_address || "";
+      document.getElementById("setting-principal-name").value = s.principal_name || "";
+      document.getElementById("setting-principal-nip").value = s.principal_nip || "";
+      document.getElementById("setting-teacher-name").value = s.teacher_name || "";
+      document.getElementById("setting-teacher-nip").value = s.teacher_nip || "";
+      document.getElementById("setting-school-logo").value = s.school_logo || "";
+      document.getElementById("setting-dept-logo").value = s.dept_logo || "";
+      document.getElementById("setting-sig-principal").value = s.signature_principal || "";
+      document.getElementById("setting-sig-teacher").value = s.signature_teacher || "";
+      document.getElementById("setting-stamp-school").value = s.stamp_school || "";
+      document.getElementById("setting-cert-desc").value = s.cert_desc || "";
+    };
+
+    window.openCertificatePreview = function openCertificatePreview(id) {
+      var cert = findById(appData.sertifikat, id);
+      if (!cert) return;
+      activeCertData = cert;
+      
+      toggleLoading(true, "Mempersiapkan pratinjau sertifikat...");
+
+      document.getElementById("cert-display-school-name").textContent = (appData.settings.school_name || "SMK BOEDI OETOMO 2 GANDRUNGMANGU").toUpperCase();
+      document.getElementById("cert-display-school-address").textContent = (appData.settings.school_address || "").toUpperCase();
+      document.getElementById("cert-display-dept-name").textContent = (appData.settings.dept_name || "TEKNIK OTOMOTIF").toUpperCase();
+      document.getElementById("cert-display-teacher-name").textContent = appData.settings.teacher_name || "Guru Pengampu";
+      document.getElementById("cert-display-teacher-nip").textContent = "NIP. " + (appData.settings.teacher_nip || "-");
+      document.getElementById("cert-display-principal-name").textContent = appData.settings.principal_name || "Kepala Sekolah";
+      document.getElementById("cert-display-principal-nip").textContent = "NIP. " + (appData.settings.principal_nip || "-");
+      document.getElementById("cert-display-desc").textContent = appData.settings.cert_desc || "-";
+
+      document.getElementById("cert-display-number").textContent = cert.cert_number || "-";
+      document.getElementById("cert-display-student").textContent = cert.student_name ? cert.student_name.toUpperCase() : "-";
+      document.getElementById("cert-display-nis").textContent = cert.nis || "-";
+      
+      var resolvedTopic = cert.jobsheet_title || cert.jobsheet || cert.job_title || "";
+      if (!resolvedTopic && cert.jobsheet_id && appData.jobsheets) {
+        var foundJob = findById(appData.jobsheets, cert.jobsheet_id);
+        if (foundJob) resolvedTopic = foundJob.name;
+      }
+      if (!resolvedTopic) resolvedTopic = "DOKUMEN UJI KOMPETENSI KEJURUAN";
+      document.getElementById("cert-display-jobsheet").textContent = resolvedTopic.toUpperCase();
+
+      var payloadBase64 = {
+        school_logo: appData.settings.school_logo,
+        dept_logo: appData.settings.dept_logo,
+        signature_teacher: appData.settings.signature_teacher,
+        signature_principal: appData.settings.signature_principal,
+        stamp_school: appData.settings.stamp_school,
+        qr_code: cert.qr_code
+      };
+
+      if (isMockMode) {
+        setTimeout(function() {
+          applyCertImagesToDOM(payloadBase64);
+          toggleLoading(false);
+          document.getElementById("modal-cert-preview").classList.remove("hidden");
+        }, 500);
+      } else {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res && res.success) {
+              applyCertImagesToDOM(res);
+            } else {
+              applyCertImagesToDOM(payloadBase64);
+            }
+            toggleLoading(false);
+            document.getElementById("modal-cert-preview").classList.remove("hidden");
+          })
+          .withFailureHandler(function(err) {
+            applyCertImagesToDOM(payloadBase64);
+            toggleLoading(false);
+            document.getElementById("modal-cert-preview").classList.remove("hidden");
+          })
+          .getCertificateBase64Images(payloadBase64);
+      }
+    };
+
+    window.getSvgFallback = function getSvgFallback(type) {
+      try {
+        var canvas = document.createElement("canvas");
+        var ctx = canvas.getContext("2d");
+
+        if (type === "school" || type === "dept") {
+          canvas.width = 120;
+          canvas.height = 120;
+          ctx.fillStyle = (type === "school") ? "#2563eb" : "#0ea5e9";
+          ctx.beginPath();
+          if (ctx.roundRect) ctx.roundRect(0, 0, 120, 120, 24);
+          else ctx.rect(0, 0, 120, 120);
+          ctx.fill();
+
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = 6;
+          ctx.strokeRect(25, 25, 70, 70);
+
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "bold 14px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText((type === "school") ? "SMK" : "OTOMOTIF", 60, 68);
+          return canvas.toDataURL("image/png");
+        } else if (type === "sig") {
+          canvas.width = 180;
+          canvas.height = 60;
+          ctx.strokeStyle = "#1e3a8a";
+          ctx.lineWidth = 3;
+          ctx.lineCap = "round";
+          ctx.beginPath();
+          ctx.moveTo(15, 35);
+          ctx.bezierCurveTo(45, 5, 75, 45, 135, 20);
+          ctx.bezierCurveTo(145, 10, 165, 30, 175, 25);
+          ctx.stroke();
+          return canvas.toDataURL("image/png");
+        } else if (type === "stamp") {
+          canvas.width = 140;
+          canvas.height = 140;
+          ctx.strokeStyle = "#2563eb";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(70, 70, 60, 0, Math.PI * 2);
+          ctx.stroke();
+
+          ctx.fillStyle = "#2563eb";
+          ctx.font = "bold 10px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText("SMK BOEDI OETOMO", 70, 62);
+          ctx.font = "bold 9px sans-serif";
+          ctx.fillText("TERAKREDITASI", 70, 80);
+          return canvas.toDataURL("image/png");
+        } else if (type === "qr") {
+          canvas.width = 100;
+          canvas.height = 100;
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, 100, 100);
+          ctx.fillStyle = "#000000";
+          ctx.fillRect(10, 10, 30, 30);
+          ctx.fillRect(60, 10, 30, 30);
+          ctx.fillRect(10, 60, 30, 30);
+          ctx.fillRect(15, 15, 20, 20);
+          ctx.fillRect(65, 15, 20, 20);
+          ctx.fillRect(15, 65, 20, 20);
+          ctx.fillRect(50, 50, 20, 20);
+          return canvas.toDataURL("image/png");
+        }
+        return "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+      } catch(e) {
+        return "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+      }
+    };
+
+    window.applyCertImagesToDOM = function applyCertImagesToDOM(res) {
+      res = res || {};
+      document.getElementById("cert-display-school-logo").src = (res.school_logo && res.school_logo.length > 30) ? res.school_logo : getSvgFallback("school");
+      document.getElementById("cert-display-dept-logo").src = (res.dept_logo && res.dept_logo.length > 30) ? res.dept_logo : getSvgFallback("dept");
+      document.getElementById("cert-display-sig-teacher").src = (res.signature_teacher && res.signature_teacher.length > 30) ? res.signature_teacher : getSvgFallback("sig");
+      document.getElementById("cert-display-sig-principal").src = (res.signature_principal && res.signature_principal.length > 30) ? res.signature_principal : getSvgFallback("sig");
+      document.getElementById("cert-display-stamp").src = (res.stamp_school && res.stamp_school.length > 30) ? res.stamp_school : getSvgFallback("stamp");
+      document.getElementById("cert-display-qr").src = (res.qr_code && res.qr_code.length > 30) ? res.qr_code : getSvgFallback("qr");
+    };
+
+    window.closeCertPreviewModal = function closeCertPreviewModal() {
+      document.getElementById("modal-cert-preview").classList.add("hidden");
+    };
+
+    window.downloadCertificateDirect = function downloadCertificateDirect(id) {
+      var cert = findById(appData.sertifikat, id);
+      if (!cert) return;
+      activeCertData = cert;
+      
+      toggleLoading(true, "Mengekspor file PDF...");
+      
+      document.getElementById("cert-display-school-name").textContent = (appData.settings.school_name || "SMK BOEDI OETOMO 2 GANDRUNGMANGU").toUpperCase();
+      document.getElementById("cert-display-school-address").textContent = (appData.settings.school_address || "").toUpperCase();
+      document.getElementById("cert-display-dept-name").textContent = (appData.settings.dept_name || "TEKNIK OTOMOTIF").toUpperCase();
+      document.getElementById("cert-display-teacher-name").textContent = appData.settings.teacher_name || "Guru Pengampu";
+      document.getElementById("cert-display-teacher-nip").textContent = "NIP. " + (appData.settings.teacher_nip || "-");
+      document.getElementById("cert-display-principal-name").textContent = appData.settings.principal_name || "Kepala Sekolah";
+      document.getElementById("cert-display-principal-nip").textContent = "NIP. " + (appData.settings.principal_nip || "-");
+      document.getElementById("cert-display-desc").textContent = appData.settings.cert_desc || "-";
+
+      document.getElementById("cert-display-number").textContent = cert.cert_number || "-";
+      document.getElementById("cert-display-student").textContent = cert.student_name ? cert.student_name.toUpperCase() : "-";
+      document.getElementById("cert-display-nis").textContent = cert.nis || "-";
+      
+      var resolvedTopic = cert.jobsheet_title || cert.jobsheet || cert.job_title || "";
+      if (!resolvedTopic && cert.jobsheet_id && appData.jobsheets) {
+        var foundJob = findById(appData.jobsheets, cert.jobsheet_id);
+        if (foundJob) resolvedTopic = foundJob.name;
+      }
+      if (!resolvedTopic) resolvedTopic = "DOKUMEN UJI KOMPETENSI KEJURUAN";
+      document.getElementById("cert-display-jobsheet").textContent = resolvedTopic.toUpperCase();
+      
+      var payloadBase64 = {
+        school_logo: appData.settings.school_logo,
+        dept_logo: appData.settings.dept_logo,
+        signature_teacher: appData.settings.signature_teacher,
+        signature_principal: appData.settings.signature_principal,
+        stamp_school: appData.settings.stamp_school,
+        qr_code: cert.qr_code
+      };
+      
+      function triggerPDF() {
+        var element = document.getElementById("printable-area");
+        
+        var stage = document.createElement("div");
+        stage.style.position = "absolute";
+        stage.style.left = "-9999px";
+        stage.style.top = "0px";
+        stage.style.width = "297mm";
+        stage.style.height = "210mm";
+        stage.style.backgroundColor = "#ffffff";
+        stage.style.zIndex = "-9999";
+        
+        var clone = element.cloneNode(true);
+        clone.style.position = "static";
+        clone.style.transform = "none";
+        clone.style.margin = "0";
+        clone.style.width = "297mm";
+        clone.style.height = "210mm";
+        
+        stage.appendChild(clone);
+        document.body.appendChild(stage);
+
+        var sanitizedName = activeCertData && activeCertData.student_name ? activeCertData.student_name.split(" ").join("_") : "Siswa";
+        var filename = "Sertifikat_" + sanitizedName + "_Kelayakan.pdf";
+        
+        var opt = {
+          margin: 0,
+          filename: filename,
+          image: { type: "jpeg", quality: 0.98 },
+          html2canvas: { 
+            scale: 2.5, 
+            useCORS: true, 
+            letterRendering: true, 
+            logging: false,
+            windowWidth: 1250
+          },
+          jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
+          pagebreak: { mode: "avoid-all" }
+        };
+        
+        html2pdf()
+          .from(clone)
+          .set(opt)
+          .toPdf()
+          .get("pdf")
+          .then(function(pdf) {
+            pdf.save(filename);
+            if (stage && stage.parentNode) stage.parentNode.removeChild(stage);
+
+            toggleLoading(false);
+            showToast("Berhasil", "File PDF berhasil diunduh ke perangkat Anda.", "success");
+            
+            if (!isMockMode) {
+              var base64Data = pdf.output("datauristring");
+              google.script.run
+                .withSuccessHandler(function(res) {
+                  if (res && res.success) {
+                    console.log("File berhasil dicadangkan di Cloud Drive.");
+                  }
+                })
+                .saveAndGetDownloadUrl(base64Data, filename);
+            }
+          }).catch(function(err) {
+            if (stage && stage.parentNode) stage.parentNode.removeChild(stage);
+            toggleLoading(false);
+            showToast("Ekspor Gagal", err.toString(), "danger");
+          });
+      }
+
+      if (isMockMode) {
+        setTimeout(function() {
+          applyCertImagesToDOM(payloadBase64);
+          triggerPDF();
+        }, 400);
+      } else {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res && res.success) {
+              applyCertImagesToDOM(res);
+              triggerPDF();
+            } else {
+              applyCertImagesToDOM(payloadBase64);
+              triggerPDF();
+            }
+          })
+          .withFailureHandler(function(err) {
+            applyCertImagesToDOM(payloadBase64);
+            triggerPDF();
+          })
+          .getCertificateBase64Images(payloadBase64);
+      }
+    };
+
+    window.downloadCertificatePDFDirect = function downloadCertificatePDFDirect() {
+      if (!activeCertData) return;
+      downloadCertificateDirect(activeCertData.id);
+    };
+
+    window.openAddJobsheetModal = function openAddJobsheetModal() {
+      var body = document.getElementById("modal-crud-body");
+      document.getElementById("modal-crud-title").textContent = "BUAT MODUL JOBSHEET BARU";
+      
+      body.innerHTML = '<form id="form-crud-action" class="space-y-4">' +
+        '<div>' +
+          '<label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Kode Modul (e.g., TO-01)</label>' +
+          '<input type="text" id="crud-code" required class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary-500 bg-slate-50 dark:bg-slate-955">' +
+        '</div>' +
+        '<div>' +
+          '<label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Nama / Judul Jobsheet</label>' +
+          '<input type="text" id="crud-name" required class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary-500 bg-slate-50 dark:bg-slate-955">' +
+        '</div>' +
+        '<div class="grid grid-cols-2 gap-3">' +
+          '<div>' +
+            '<label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Kelas Target</label>' +
+            '<select id="crud-class" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary-500 bg-slate-50 dark:bg-slate-955">' +
+              '<option value="XI TO 1">XI TO 1</option>' +
+              '<option value="XI TO 2">XI TO 2</option>' +
+              '<option value="XII TO 1">XII TO 1</option>' +
+              '<option value="Semua">Semua Kelas</option>' +
+            '</select>' +
+          '</div>' +
+          '<div>' +
+            '<label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Semester</label>' +
+            '<select id="crud-semester" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary-500 bg-slate-50 dark:bg-slate-955">' +
+              '<option value="Ganjil">Ganjil</option>' +
+              '<option value="Genap">Genap</option>' +
+            '</select>' +
+          '</div>' +
+        '</div>' +
+        '<div>' +
+          '<label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Tautan Manual Book (PDF)</label>' +
+          '<input type="text" id="crud-link" required class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary-500 bg-slate-50 dark:bg-slate-955" value="https://drive.google.com">' +
+        '</div>' +
+        '<div>' +
+          '<label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Deskripsi & Instruksi Kerja</label>' +
+          '<textarea id="crud-desc" rows="3" required class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary-500 bg-slate-50 dark:bg-slate-955"></textarea>' +
+        '</div>' +
+        '<div class="flex justify-end gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">' +
+          '<button type="button" onclick="window.closeCRUDModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-white text-xs font-bold uppercase rounded-lg">Batal</button>' +
+          '<button type="button" onclick="window.submitNewJobsheet()" class="px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white text-xs font-bold uppercase rounded-lg">Simpan Modul</button>' +
+        '</div>' +
+      '</form>';
+
+      document.getElementById("modal-crud").classList.remove("hidden");
+    };
+
+    window.openEditJobsheet = function openEditJobsheet(id) {
+      var job = findById(appData.jobsheets, id);
+      if (!job) return;
+      openAddJobsheetModal();
+      document.getElementById("modal-crud-title").textContent = "EDIT MODUL JOBSHEET";
+      
+      document.getElementById("crud-code").value = job.code || "";
+      document.getElementById("crud-name").value = job.name || "";
+      document.getElementById("crud-class").value = job.class || "Semua";
+      document.getElementById("crud-semester").value = job.semester || "Ganjil";
+      document.getElementById("crud-link").value = job.link || "https://drive.google.com";
+      document.getElementById("crud-desc").value = job.description || "";
+      
+      var footer = document.querySelector("#form-crud-action .justify-end");
+      footer.innerHTML = '<button type="button" onclick="window.deleteJobsheetHandler(\'' + job.id + '\')" class="px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 text-xs font-bold uppercase rounded-lg mr-auto">Hapus</button>' +
+        '<button type="button" onclick="window.closeCRUDModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold uppercase rounded-lg">Batal</button>' +
+        '<button type="button" onclick="window.submitEditJobsheet(\'' + job.id + '\')" class="px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white text-xs font-bold uppercase rounded-lg">Simpan Perubahan</button>';
+    };
+
+    window.closeCRUDModal = function closeCRUDModal() {
+      document.getElementById("modal-crud").classList.add("hidden");
+    };
+
+    window.submitNewJobsheet = function submitNewJobsheet() {
+      var payload = {
+        code: document.getElementById("crud-code").value.trim(),
+        name: document.getElementById("crud-name").value.trim(),
+        class: document.getElementById("crud-class").value,
+        semester: document.getElementById("crud-semester").value,
+        competency: "Teknik Otomotif",
+        link: document.getElementById("crud-link").value.trim(),
+        description: document.getElementById("crud-desc").value.trim(),
+        status: "Aktif"
+      };
+
+      if (!payload.code || !payload.name) {
+        showToast("Validasi Gagal", "Harap isi semua kolom wajib!", "warning");
+        return;
+      }
+
+      toggleLoading(true, "Menyimpan modul jobsheet baru...");
+      closeCRUDModal();
+
+      if (isMockMode) {
+        setTimeout(function() {
+          payload.id = "JOB-0" + (appData.jobsheets.length + 1);
+          appData.jobsheets.push(payload);
+          renderApp();
+          toggleLoading(false);
+          showToast("Sukses", "Jobsheet baru berhasil disimpan.", "success");
+        }, 500);
+      } else {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res && res.success) {
+              showToast("Sukses", res.message, "success");
+              syncAppData();
+            } else {
+              toggleLoading(false);
+              showToast("Gagal", (res && res.message) ? res.message : "Kesalahan internal.", "danger");
+            }
+          })
+          .withFailureHandler(function(err) {
+            toggleLoading(false);
+            showToast("Server Error", err ? err.toString() : "Gagal memproses ke server.", "danger");
+          })
+          .saveJobsheet(payload);
+      }
+    };
+
+    window.submitEditJobsheet = function submitEditJobsheet(id) {
+      var payload = {
+        id: id,
+        code: document.getElementById("crud-code").value.trim(),
+        name: document.getElementById("crud-name").value.trim(),
+        class: document.getElementById("crud-class").value,
+        semester: document.getElementById("crud-semester").value,
+        competency: "Teknik Otomotif",
+        link: document.getElementById("crud-link").value.trim(),
+        description: document.getElementById("crud-desc").value.trim(),
+        status: "Aktif"
+      };
+
+      toggleLoading(true, "Menyimpan perubahan...");
+      closeCRUDModal();
+
+      if (isMockMode) {
+        setTimeout(function() {
+          for (var i = 0; i < appData.jobsheets.length; i++) {
+            if (appData.jobsheets[i].id === id) {
+              appData.jobsheets[i] = payload;
+              break;
+            }
+          }
+          renderApp();
+          toggleLoading(false);
+          showToast("Sukses", "Modul berhasil diupdate.", "success");
+        }, 500);
+      } else {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res && res.success) {
+              showToast("Sukses", res.message, "success");
+              syncAppData();
+            } else {
+              toggleLoading(false);
+              showToast("Gagal", (res && res.message) ? res.message : "Sistem gagal mengupdate.", "danger");
+            }
+          })
+          .withFailureHandler(function(err) {
+            toggleLoading(false);
+            showToast("Server Error", err ? err.toString() : "Gagal menyimpan perubahan.", "danger");
+          })
+          .saveJobsheet(payload);
+      }
+    };
+
+    window.deleteJobsheetHandler = function deleteJobsheetHandler(id) {
+      closeCRUDModal();
+      openConfirmModal(
+        "Hapus Modul Jobsheet", 
+        "Apakah Anda yakin ingin menghapus modul jobsheet ini dari database kurikulum?", 
+        function() {
+          toggleLoading(true, "Menghapus modul jobsheet...");
+          if (isMockMode) {
+            setTimeout(function() {
+              appData.jobsheets = appData.jobsheets.filter(function(j) { return j.id !== id; });
+              renderApp();
+              toggleLoading(false);
+              showToast("Sukses", "Jobsheet berhasil dihapus.", "success");
+            }, 500);
+          } else {
+            google.script.run
+              .withSuccessHandler(function(res) {
+                if (res && res.success) {
+                  showToast("Sukses", res.message, "success");
+                  syncAppData();
+                } else {
+                  toggleLoading(false);
+                  showToast("Gagal", (res && res.message) ? res.message : "Gagal menghapus.", "danger");
+                }
+              })
+              .withFailureHandler(function(err) {
+                toggleLoading(false);
+                showToast("Server Error", err ? err.toString() : "Gagal menghapus modul.", "danger");
+              })
+              .deleteJobsheet(id);
+          }
+        }
+      );
+    };
+
+    window.openWPSubmissionModal = function openWPSubmissionModal() {
+      var body = document.getElementById("modal-crud-body");
+      document.getElementById("modal-crud-title").textContent = "AJUKAN WORK PREPARATION BARU";
+
+      var options = "";
+      for (var i = 0; i < appData.jobsheets.length; i++) {
+        var j = appData.jobsheets[i];
+        options += '<option value="' + j.id + '">' + (j.code || "") + ' - ' + (j.name || "") + '</option>';
+      }
+
+      body.innerHTML = '<form id="form-crud-action" class="space-y-4">' +
+        '<div>' +
+          '<label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Pilih Unit Jobsheet Kompetensi</label>' +
+          '<select id="wp-jobsheet-id" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary-500 bg-slate-50 dark:bg-slate-950">' +
+            options +
+          '</select>' +
+        '</div>' +
+        '<div>' +
+          '<label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Tujuan Unjuk Kerja</label>' +
+          '<input type="text" id="wp-purpose" required class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary-500 bg-slate-50 dark:bg-slate-955" placeholder="e.g. Mengukur celah katup silinder">' +
+        '</div>' +
+        '<div>' +
+          '<label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Foto Persiapan Fisik / Alat (Galeri / Kamera HP)</label>' +
+          '<div class="space-y-2">' +
+            '<div class="flex items-center gap-2">' +
+              '<input type="file" id="wp-photo-file" accept="image/*" class="hidden" onchange="window.previewAndCompressUpload(event, \'wp-photo-preview\', \'wp-photo-url-hidden\')">' +
+              '<button type="button" onclick="document.getElementById(\'wp-photo-file\').click()" class="px-4 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-white rounded-xl text-xs font-bold transition flex items-center gap-2 w-full justify-center border border-dashed border-slate-300 dark:border-slate-700">' +
+                '<i class="bi bi-camera-fill text-primary-500 text-sm"></i> Ambil Foto / Pilih Gambar' +
+              '</button>' +
+            '</div>' +
+            '<input type="hidden" id="wp-photo-url-hidden" value="">' +
+            '<div id="wp-photo-preview" class="hidden p-2 border border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50 dark:bg-slate-955 flex items-center gap-3">' +
+              '<img id="wp-photo-preview-img" src="" class="w-12 h-12 rounded-xl object-cover border border-slate-300 dark:border-slate-700 shrink-0">' +
+              '<div class="overflow-hidden flex-1">' +
+                '<p class="text-[10px] font-bold text-slate-700 dark:text-slate-300 truncate" id="wp-photo-filename">foto_persiapan.jpg</p>' +
+                '<span class="text-[8px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest block" id="wp-photo-status">Siap Diunggah</span>' +
+              '</div>' +
+              '<button type="button" onclick="window.clearUploadPreview(\'wp-photo-file\', \'wp-photo-preview\', \'wp-photo-url-hidden\')" class="text-red-500 p-1 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg"><i class="bi bi-x-lg"></i></button>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="flex justify-end gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">' +
+          '<button type="button" onclick="window.closeCRUDModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-white text-xs font-bold uppercase rounded-lg">Batal</button>' +
+          '<button type="button" onclick="window.submitNewWP()" class="px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white text-xs font-bold uppercase rounded-lg">Ajukan Rencana</button>' +
+        '</div>' +
+      '</form>';
+
+      document.getElementById("modal-crud").classList.remove("hidden");
+    };
+
+    window.submitNewWP = function submitNewWP() {
+      var jId = document.getElementById("wp-jobsheet-id").value;
+      var job = findById(appData.jobsheets, jId);
+      if (!job) return;
+
+      var purposeVal = document.getElementById("wp-purpose").value.trim();
+      if (!purposeVal) {
+        showToast("Pengajuan Gagal", "Tujuan unjuk kerja wajib diisi!", "warning");
+        return;
+      }
+
+      var photoBase64 = document.getElementById("wp-photo-url-hidden").value;
+
+      var payload = {
+        student_name: activeUser.name,
+        nis: activeUser.nis_nip,
+        class: activeUser.class,
+        jobsheet_id: jId,
+        jobsheet_title: job.name,
+        purpose: purposeVal,
+        wp_photo: photoBase64 || "https://placehold.co/400x300/cbd5e1/1e293b?text=WORK+PREPARATION",
+        tools: "-",
+        materials: "-",
+        steps: "-",
+        apd: "-",
+        k3: "-",
+        duration: "0",
+        wp_pdf: ""
+      };
+
+      toggleLoading(true, "Mengirim rencana & foto secara instan...");
+      closeCRUDModal();
+
+      if (isMockMode) {
+        setTimeout(function() {
+          payload.id = "WP-0" + (appData.wp.length + 1);
+          payload.status = "Menunggu";
+          payload.timestamp = new Date().toLocaleDateString("id-ID");
+          appData.wp.push(payload);
+          renderApp();
+          toggleLoading(false);
+          showToast("Sukses", "Rencana kerja & foto berhasil diajukan.", "success");
+        }, 300);
+      } else {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res && res.success) {
+              showToast("Sukses", res.message, "success");
+              syncAppData();
+            } else {
+              toggleLoading(false);
+              showToast("Gagal", (res && res.message) ? res.message : "Sistem gagal mengirim.", "danger");
+            }
+          })
+          .withFailureHandler(function(err) {
+            toggleLoading(false);
+            showToast("Server Error", err ? err.toString() : "Gagal mengirim formulir.", "danger");
+          })
+          .submitWorkPrep(payload);
+      }
+    };
+
+    window.openReviewWPModal = function openReviewWPModal(id) {
+      var w = findById(appData.wp, id);
+      if (!w) return;
+      var body = document.getElementById("modal-crud-body");
+      document.getElementById("modal-crud-title").textContent = "VALIDASI WORK PREPARATION";
+
+      var photoPreviewHtml = (w.wp_photo && w.wp_photo.length > 10) ?
+        '<div class="pt-2">' +
+          '<span class="text-slate-400 font-bold uppercase block text-[8px] mb-1">Foto Hasil Kerja Siswa (Klik foto untuk perbesar)</span>' +
+          '<img src="' + w.wp_photo + '" onclick="window.open(\'' + w.wp_photo + '\', \'_blank\')" class="w-full h-48 object-cover rounded-2xl border border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-90 transition shadow-sm">' +
+        '</div>' : '';
+
+      body.innerHTML = '<form id="form-crud-action" class="space-y-4">' +
+        '<div class="p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl space-y-1.5 text-xs border border-slate-200 dark:border-slate-800">' +
+          '<p><span class="text-slate-400 font-bold uppercase block text-[8px]">Nama Siswa</span> <span class="font-bold">' + (w.student_name || "") + '</span> (' + (w.nis || "") + ')</p>' +
+          '<p><span class="text-slate-400 font-bold uppercase block text-[8px]">Jobsheet Target</span> <span class="font-bold">' + (w.jobsheet_title || "") + '</span></p>' +
+          '<p><span class="text-slate-400 font-bold uppercase block text-[8px]">Tujuan Kerja</span> <span class="font-bold">' + (w.purpose || "") + '</span></p>' +
+          photoPreviewHtml +
+        '</div>' +
+        '<div>' +
+          '<label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Skor Rencana Kerja (0-100)</label>' +
+          '<input type="number" id="review-wp-score" required class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary-500 bg-slate-50 dark:bg-slate-955" min="0" max="100" value="' + (w.score && w.score !== "0" ? w.score : "80") + '">' +
+        '</div>' +
+        '<div>' +
+          '<label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Catatan Evaluasi Guru</label>' +
+          '<textarea id="review-wp-notes" rows="2" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary-500 bg-slate-50 dark:bg-slate-955" placeholder="Lanjutkan unjuk kerja praktik di bengkel!">' + (w.notes || "") + '</textarea>' +
+        '</div>' +
+        '<div>' +
+          '<label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Keputusan Validasi</label>' +
+          '<select id="review-wp-status" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold bg-slate-50 dark:bg-slate-955">' +
+            '<option value="Disetujui" ' + (w.status === "Disetujui" ? "selected" : "") + '>Setujui & Izinkan Praktik</option>' +
+            '<option value="Ditolak" ' + (w.status === "Ditolak" ? "selected" : "") + '>Minta Revisi Rencana</option>' +
+          '</select>' +
+        '</div>' +
+        '<div class="flex justify-end gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">' +
+          '<button type="button" onclick="window.closeCRUDModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-white text-xs font-bold uppercase rounded-lg">Batal</button>' +
+          '<button type="button" onclick="window.submitWPReview(\'' + w.id + '\')" class="px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white text-xs font-bold uppercase rounded-lg">Simpan Keputusan</button>' +
+        '</div>' +
+      '</form>';
+
+      document.getElementById("modal-crud").classList.remove("hidden");
+    };
+
+    window.submitWPReview = function submitWPReview(id) {
+      var payload = {
+        id: id,
+        score: document.getElementById("review-wp-score").value.trim(),
+        notes: document.getElementById("review-wp-notes").value.trim(),
+        status: document.getElementById("review-wp-status").value
+      };
+
+      if (!payload.score) {
+        showToast("Error", "Skor validasi harus diisi!", "warning");
+        return;
+      }
+
+      toggleLoading(true, "Menyimpan hasil review...");
+      closeCRUDModal();
+
+      if (isMockMode) {
+        setTimeout(function() {
+          for (var i = 0; i < appData.wp.length; i++) {
+            if (appData.wp[i].id === id) {
+              appData.wp[i].status = payload.status;
+              appData.wp[i].score = payload.score;
+              appData.wp[i].notes = payload.notes;
+
+              if (payload.status === "Disetujui") {
+                for (var j = 0; j < appData.nilai.length; j++) {
+                  if (appData.nilai[j].nis === appData.wp[i].nis && appData.nilai[j].jobsheet_id === appData.wp[i].jobsheet_id) {
+                    appData.nilai[j].wp_score = payload.score;
+                    break;
+                  }
+                }
+              }
+              break;
+            }
+          }
+          renderApp();
+          toggleLoading(false);
+          showToast("Sukses", "Validasi rencana disimpan.", "success");
+        }, 500);
+      } else {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res && res.success) {
+              showToast("Sukses", res.message, "success");
+              syncAppData();
+            } else {
+              toggleLoading(false);
+              showToast("Gagal", (res && res.message) ? res.message : "Gagal menyimpan keputusan.", "danger");
+            }
+          })
+          .withFailureHandler(function(err) {
+            toggleLoading(false);
+            showToast("Server Error", err ? err.toString() : "Gagal memproses penilaian.", "danger");
+          })
+          .saveWPReview(payload);
+      }
+    };
+
+    window.openLaporanSubmissionModal = function openLaporanSubmissionModal() {
+      var body = document.getElementById("modal-crud-body");
+      document.getElementById("modal-crud-title").textContent = "KIRIM LAPORAN UNJUK KERJA";
+
+      var options = "";
+      for (var i = 0; i < appData.jobsheets.length; i++) {
+        var j = appData.jobsheets[i];
+        options += '<option value="' + j.id + '">' + (j.code || "") + ' - ' + (j.name || "") + '</option>';
+      }
+
+      body.innerHTML = '<form id="form-crud-action" class="space-y-4">' +
+        '<div>' +
+          '<label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Pilih Unit Jobsheet Kompetensi</label>' +
+          '<select id="lap-jobsheet-id" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary-500 bg-slate-50 dark:bg-slate-955">' +
+            options +
+          '</select>' +
+        '</div>' +
+        '<div>' +
+          '<label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Judul Dokumen Laporan</label>' +
+          '<input type="text" id="lap-title" required class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary-500 bg-slate-50 dark:bg-slate-955" placeholder="e.g. Laporan Ketuntasan Overhaul Kijang 5K">' +
+        '</div>' +
+        '<div>' +
+          '<label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Foto Bukti Hasil Kerja Fisik (Galeri / Kamera HP)</label>' +
+          '<div class="space-y-2">' +
+            '<div class="flex items-center gap-2">' +
+              '<input type="file" id="lap-photo-file" accept="image/*" class="hidden" onchange="window.previewAndCompressUpload(event, \'lap-photo-preview\', \'lap-photo-url-hidden\')">' +
+              '<button type="button" onclick="document.getElementById(\'lap-photo-file\').click()" class="px-4 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-white rounded-xl text-xs font-bold transition flex items-center gap-2 w-full justify-center border border-dashed border-slate-300 dark:border-slate-700">' +
+                '<i class="bi bi-camera-fill text-indigo-500 text-sm"></i> Ambil Foto / Pilih Gambar' +
+              '</button>' +
+            '</div>' +
+            '<input type="hidden" id="lap-photo-url-hidden" value="">' +
+            '<div id="lap-photo-preview" class="hidden p-2 border border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50 dark:bg-slate-955 flex items-center gap-3">' +
+              '<img id="lap-photo-preview-img" src="" class="w-12 h-12 rounded-xl object-cover border border-slate-300 dark:border-slate-700 shrink-0">' +
+              '<div class="overflow-hidden flex-1">' +
+                '<p class="text-[10px] font-bold text-slate-700 dark:text-slate-300 truncate" id="lap-photo-filename">foto_laporan.jpg</p>' +
+                '<span class="text-[8px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest block" id="lap-photo-status">Siap Diunggah</span>' +
+              '</div>' +
+              '<button type="button" onclick="window.clearUploadPreview(\'lap-photo-file\', \'lap-photo-preview\', \'lap-photo-url-hidden\')" class="text-red-500 p-1 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg"><i class="bi bi-x-lg"></i></button>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="flex justify-end gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">' +
+          '<button type="button" onclick="window.closeCRUDModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-white text-xs font-bold uppercase rounded-lg">Batal</button>' +
+          '<button type="button" onclick="window.submitNewLaporan()" class="px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white text-xs font-bold uppercase rounded-lg">Kirim Laporan</button>' +
+        '</div>' +
+      '</form>';
+
+      document.getElementById("modal-crud").classList.remove("hidden");
+    };
+
+    window.submitNewLaporan = function submitNewLaporan() {
+      var jId = document.getElementById("lap-jobsheet-id").value;
+      var job = findById(appData.jobsheets, jId);
+      if (!job) return;
+
+      var titleVal = document.getElementById("lap-title").value.trim();
+      var photoBase64 = document.getElementById("lap-photo-url-hidden").value;
+
+      if (!titleVal) {
+        showToast("Error", "Judul laporan wajib diisi!", "warning");
+        return;
+      }
+
+      if (!photoBase64) {
+        showToast("Error", "Harap ambil atau unggah foto bukti laporan!", "warning");
+        return;
+      }
+
+      var payload = {
+        student_name: activeUser.name,
+        nis: activeUser.nis_nip,
+        class: activeUser.class,
+        jobsheet_id: jId,
+        jobsheet_title: job.name,
+        title: titleVal,
+        pdf_link: photoBase64,
+        photo: photoBase64,
+        date: new Date().toISOString().substring(0, 10)
+      };
+
+      toggleLoading(true, "Mengirim foto laporan...");
+      closeCRUDModal();
+
+      if (isMockMode) {
+        setTimeout(function() {
+          payload.id = "LAP-0" + (appData.laporan.length + 1);
+          payload.status = "Menunggu";
+          payload.timestamp = new Date().toLocaleDateString("id-ID");
+          appData.laporan.push(payload);
+          renderApp();
+          toggleLoading(false);
+          showToast("Sukses", "Foto laporan unjuk kerja berhasil dikirim.", "success");
+        }, 300);
+      } else {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res && res.success) {
+              showToast("Sukses", res.message, "success");
+              syncAppData();
+            } else {
+              toggleLoading(false);
+              showToast("Gagal", (res && res.message) ? res.message : "Laporan gagal dikirim.", "danger");
+            }
+          })
+          .withFailureHandler(function(err) {
+            toggleLoading(false);
+            showToast("Server Error", err ? err.toString() : "Gagal mengunggah berkas laporan.", "danger");
+          })
+          .submitLaporan(payload);
+      }
+    };
+
+    window.openReviewLaporanModal = function openReviewLaporanModal(id) {
+      var l = findById(appData.laporan, id);
+      if (!l) return;
+      var body = document.getElementById("modal-crud-body");
+      document.getElementById("modal-crud-title").textContent = "EVALUASI LAPORAN";
+
+      var photoPreviewHtml = (l.photo && l.photo.length > 10) ?
+        '<div class="pt-2">' +
+          '<span class="text-slate-400 font-bold uppercase block text-[8px] mb-1">Foto Bukti Hasil Kerja Siswa (Klik foto untuk perbesar)</span>' +
+          '<img src="' + l.photo + '" onclick="window.open(\'' + l.photo + '\', \'_blank\')" class="w-full h-48 object-cover rounded-2xl border border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-90 transition shadow-sm">' +
+        '</div>' : '';
+
+      body.innerHTML = '<form id="form-crud-action" class="space-y-4">' +
+        '<div class="p-3 bg-slate-50 dark:bg-slate-955 rounded-2xl space-y-1.5 text-xs border border-slate-200 dark:border-slate-800">' +
+          '<p><span class="text-slate-400 font-bold uppercase block text-[8px]">Siswa Pengirim</span> <span class="font-bold">' + (l.student_name || "") + '</span> (' + (l.nis || "") + ')</p>' +
+          '<p><span class="text-slate-400 font-bold uppercase block text-[8px]">Judul Laporan</span> <span class="font-bold">' + (l.title || "") + '</span></p>' +
+          photoPreviewHtml +
+        '</div>' +
+        '<div>' +
+          '<label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Skor Kerapihan Laporan (0-100)</label>' +
+          '<input type="number" id="review-lap-score" required class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary-500 bg-slate-50 dark:bg-slate-955" min="0" max="100" value="' + (l.score && l.score !== "0" ? l.score : "85") + '">' +
+        '</div>' +
+        '<div>' +
+          '<label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Umpan Balik Guru (Ulasan/Catatan Evaluasi)</label>' +
+          '<textarea id="review-lap-comments" rows="2" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary-500 bg-slate-50 dark:bg-slate-955" placeholder="Laporan sangat baik dan terstruktur!">' + (l.comments || "") + '</textarea>' +
+        '</div>' +
+        '<div>' +
+          '<label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Keputusan Evaluasi</label>' +
+          '<select id="review-lap-status" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold bg-slate-50 dark:bg-slate-955">' +
+            '<option value="Disetujui" ' + (l.status === "Disetujui" ? "selected" : "") + '>Lulus & Terima Berkas</option>' +
+            '<option value="Ditolak" ' + (l.status === "Ditolak" ? "selected" : "") + '>Tolak Laporan (Revisi)</option>' +
+          '</select>' +
+        '</div>' +
+        '<div class="flex justify-end gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">' +
+          '<button type="button" onclick="window.closeCRUDModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-white text-xs font-bold uppercase rounded-lg">Batal</button>' +
+          '<button type="button" onclick="window.submitLaporanReview(\'' + l.id + '\')" class="px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white text-xs font-bold uppercase rounded-lg">Simpan Penilaian</button>' +
+        '</div>' +
+      '</form>';
+
+      document.getElementById("modal-crud").classList.remove("hidden");
+    };
+
+    window.submitLaporanReview = function submitLaporanReview(id) {
+      var payload = {
+        id: id,
+        score: document.getElementById("review-lap-score").value.trim(),
+        comments: document.getElementById("review-lap-comments").value.trim(),
+        status: document.getElementById("review-lap-status").value
+      };
+
+      if (!payload.score) {
+        showToast("Error", "Harap berikan skor evaluasi terlebih dahulu!", "warning");
+        return;
+      }
+
+      toggleLoading(true, "Menyimpan hasil evaluasi laporan...");
+      closeCRUDModal();
+
+      if (isMockMode) {
+        setTimeout(function() {
+          for (var i = 0; i < appData.laporan.length; i++) {
+            if (appData.laporan[i].id === id) {
+              appData.laporan[i].status = payload.status;
+              appData.laporan[i].score = payload.score;
+              appData.laporan[i].comments = payload.comments;
+
+              if (payload.status === "Disetujui") {
+                for (var j = 0; j < appData.nilai.length; j++) {
+                  if (appData.nilai[j].nis === appData.laporan[i].nis && appData.nilai[j].jobsheet_id === appData.laporan[i].jobsheet_id) {
+                    appData.nilai[j].report_score = payload.score;
+                    break;
+                  }
+                }
+              }
+              break;
+            }
+          }
+          renderApp();
+          toggleLoading(false);
+          showToast("Sukses", "Evaluasi laporan berhasil disimpan!", "success");
+        }, 500);
+      } else {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res && res.success) {
+              showToast("Sukses", res.message, "success");
+              syncAppData();
+            } else {
+              toggleLoading(false);
+              showToast("Gagal", (res && res.message) ? res.message : "Evaluasi gagal disimpan.", "danger");
+            }
+          })
+          .withFailureHandler(function(err) {
+            toggleLoading(false);
+            showToast("Server Error", err ? err.toString() : "Gagal mereview laporan.", "danger");
+          })
+          .saveLaporanReview(payload);
+      }
+    };
+
+    window.openAddCertificateModal = function openAddCertificateModal() {
+      var body = document.getElementById("modal-crud-body");
+      document.getElementById("modal-crud-title").textContent = "TERBITKAN SERTIFIKAT MANUAL";
+
+      var studentOptions = "";
+      for (var j = 0; j < appData.students.length; j++) {
+        var s = appData.students[j];
+        studentOptions += '<option value="' + s.nis + '" data-name="' + s.name + '">' + (s.name || "") + ' (' + (s.nis || "") + ') - ' + (s.class || "") + '</option>';
+      }
+
+      var jobsheetOptions = "";
+      for (var k = 0; k < appData.jobsheets.length; k++) {
+        var job = appData.jobsheets[k];
+        jobsheetOptions += '<option value="' + job.name + '">' + (job.code || "") + ' - ' + (job.name || "") + '</option>';
+      }
+
+      body.innerHTML = '<form id="form-crud-action" class="space-y-4">' +
+        '<div>' +
+          '<label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Pilih Siswa</label>' +
+          '<select id="cert-student-select" required class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold bg-slate-50 dark:bg-slate-955">' +
+            studentOptions +
+          '</select>' +
+        '</div>' +
+        '<div>' +
+          '<label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Pilih Unit Kompetensi</label>' +
+          '<select id="cert-jobsheet-select" required class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold bg-slate-50 dark:bg-slate-955">' +
+            jobsheetOptions +
+          '</select>' +
+        '</div>' +
+        '<div>' +
+          '<label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Nilai Akhir Kelulusan</label>' +
+          '<input type="number" id="cert-score-input" required class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold bg-slate-50 dark:bg-slate-955" min="75" max="100" value="85">' +
+        '</div>' +
+        '<div class="flex justify-end gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">' +
+          '<button type="button" onclick="window.closeCRUDModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-white text-xs font-bold uppercase rounded-lg">Batal</button>' +
+          '<button type="button" onclick="window.submitManualCertificate()" class="px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white text-xs font-bold uppercase rounded-lg">Terbitkan</button>' +
+        '</div>' +
+      '</form>';
+
+      document.getElementById("modal-crud").classList.remove("hidden");
+    };
+
+    window.submitManualCertificate = function submitManualCertificate() {
+      var selectStudent = document.getElementById("cert-student-select");
+      var nis = selectStudent.value;
+      var name = selectStudent.options[selectStudent.selectedIndex].getAttribute("data-name");
+      var jobsheet_title = document.getElementById("cert-jobsheet-select").value;
+      var score = document.getElementById("cert-score-input").value;
+
+      var payload = {
+        nis: nis,
+        name: name,
+        jobsheet_title: jobsheet_title,
+        score: score
+      };
+
+      toggleLoading(true, "Menerbitkan sertifikat kompetensi...");
+      closeCRUDModal();
+
+      if (isMockMode) {
+        setTimeout(function() {
+          var certNo = "CERT/TO/DIR/00" + (appData.sertifikat.length + 1) + "-" + Math.floor(Math.random() * 90000 + 10000);
+          appData.sertifikat.push({
+            id: "CERT-0" + (appData.sertifikat.length + 1),
+            cert_number: certNo,
+            student_name: name,
+            nis: nis,
+            competency: "Teknik Otomotif",
+            jobsheet_title: jobsheet_title,
+            final_score: score,
+            date: new Date().toLocaleDateString("id-ID"),
+            qr_code: ""
+          });
+          renderApp();
+          toggleLoading(false);
+          showToast("Sukses", "E-Sertifikat berhasil diterbitkan secara manual.", "success");
+        }, 500);
+      } else {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res && res.success) {
+              showToast("Sukses", res.message, "success");
+              syncAppData();
+            } else {
+              toggleLoading(false);
+              showToast("Gagal", (res && res.message) ? res.message : "Tidak dapat menerbitkan.", "danger");
+            }
+          })
+          .withFailureHandler(function(err) {
+            toggleLoading(false);
+            showToast("Server Error", err ? err.toString() : "Gagal menerbitkan sertifikat.", "danger");
+          })
+          .directIssueCertificate(payload);
+      }
+    };
+
+    window.openGradingModal = function openGradingModal(id) {
+      var n = findById(appData.nilai, id);
+      if (!n) return;
+      var body = document.getElementById("modal-crud-body");
+      document.getElementById("modal-crud-title").textContent = "INPUT TRANSKRIP NILAI KEJURUAN";
+
+      body.innerHTML = '<form id="form-crud-action" class="space-y-4">' +
+        '<div class="p-3 bg-slate-50 dark:bg-slate-955 rounded-xl text-xs space-y-1">' +
+          '<p><span class="text-slate-400 font-bold block text-[8px] uppercase">Nama Siswa</span> <span class="font-extrabold text-slate-800 dark:text-white uppercase">' + (n.name || "") + '</span> (' + (n.nis || "") + ')</p>' +
+          '<p><span class="text-slate-400 font-bold block text-[8px] uppercase">Kompetensi Praktik</span> <span class="font-bold">' + (n.jobsheet_title || "") + '</span></p>' +
+        '</div>' +
+        '<div class="grid grid-cols-3 gap-3">' +
+          '<div>' +
+            '<label class="text-[9px] font-black uppercase text-slate-400 block mb-0.5">TP1</label>' +
+            '<input type="number" id="grade-tp1" class="w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-semibold bg-slate-50 dark:bg-slate-955" value="' + (n.tp1 || "0") + '">' +
+          '</div>' +
+          '<div>' +
+            '<label class="text-[9px] font-black uppercase text-slate-400 block mb-0.5">TP2</label>' +
+            '<input type="number" id="grade-tp2" class="w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-semibold bg-slate-50 dark:bg-slate-955" value="' + (n.tp2 || "0") + '">' +
+          '</div>' +
+          '<div>' +
+            '<label class="text-[9px] font-black uppercase text-slate-400 block mb-0.5">TP3</label>' +
+            '<input type="number" id="grade-tp3" class="w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-semibold bg-slate-50 dark:bg-slate-955" value="' + (n.tp3 || "0") + '">' +
+          '</div>' +
+          '<div>' +
+            '<label class="text-[9px] font-black uppercase text-slate-400 block mb-0.5">TP4</label>' +
+            '<input type="number" id="grade-tp4" class="w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-semibold bg-slate-50 dark:bg-slate-955" value="' + (n.tp4 || "0") + '">' +
+          '</div>' +
+          '<div>' +
+            '<label class="text-[9px] font-black uppercase text-slate-400 block mb-0.5">TP5</label>' +
+            '<input type="number" id="grade-tp5" class="w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-semibold bg-slate-50 dark:bg-slate-955" value="' + (n.tp5 || "0") + '">' +
+          '</div>' +
+          '<div>' +
+            '<label class="text-[9px] font-black uppercase text-slate-400 block mb-0.5">TP6</label>' +
+            '<input type="number" id="grade-tp6" class="w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-semibold bg-slate-50 dark:bg-slate-955" value="' + (n.tp6 || "0") + '">' +
+          '</div>' +
+        '</div>' +
+        '<div class="grid grid-cols-2 gap-3 border-t border-slate-100 dark:border-slate-800 pt-3">' +
+          '<div>' +
+            '<label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Teori UTS (ATS)</label>' +
+            '<input type="number" id="grade-ats" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold bg-slate-50 dark:bg-slate-955" value="' + (n.ats || "0") + '">' +
+          '</div>' +
+          '<div>' +
+            '<label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Teori UAS (AAS)</label>' +
+            '<input type="number" id="grade-aas" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold bg-slate-50 dark:bg-slate-955" value="' + (n.aas || "0") + '">' +
+          '</div>' +
+        '</div>' +
+        '<div class="grid grid-cols-3 gap-3 border-t border-slate-100 dark:border-slate-800 pt-3 bg-primary-600/5 p-3 rounded-2xl">' +
+          '<div>' +
+            '<label class="text-[9px] font-black uppercase text-primary-600 dark:text-primary-400 block mb-0.5">Score WP</label>' +
+            '<input type="number" id="grade-wp" class="w-full px-2.5 py-1.5 border border-primary-100 dark:border-primary-800 rounded-lg text-xs font-bold bg-white dark:bg-slate-955" value="' + (n.wp_score || "0") + '">' +
+          '</div>' +
+          '<div>' +
+            '<label class="text-[9px] font-black uppercase text-primary-600 dark:text-primary-400 block mb-0.5">Unjuk Kerja</label>' +
+            '<input type="number" id="grade-practice" class="w-full px-2.5 py-1.5 border border-primary-100 dark:border-primary-800 rounded-lg text-xs font-bold bg-white dark:bg-slate-955" value="' + (n.practice_score || "0") + '">' +
+          '</div>' +
+          '<div>' +
+            '<label class="text-[9px] font-black uppercase text-primary-600 dark:text-primary-400 block mb-0.5">Laporan</label>' +
+            '<input type="number" id="grade-report" class="w-full px-2.5 py-1.5 border border-primary-100 dark:border-primary-800 rounded-lg text-xs font-bold bg-white dark:bg-slate-955" value="' + (n.report_score || "0") + '">' +
+          '</div>' +
+        '</div>' +
+        '<div class="flex justify-end gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">' +
+          '<button type="button" onclick="window.closeCRUDModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-white text-xs font-bold uppercase rounded-lg">Batal</button>' +
+          '<button type="button" onclick="window.submitGrading(\'' + n.id + '\')" class="px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white text-xs font-bold uppercase rounded-lg">Simpan Nilai</button>' +
+        '</div>' +
+      '</form>';
+
+      document.getElementById("modal-crud").classList.remove("hidden");
+    };
+
+    window.submitGrading = function submitGrading(id) {
+      var payload = {
+        id: id,
+        tp1: document.getElementById("grade-tp1").value || "0",
+        tp2: document.getElementById("grade-tp2").value || "0",
+        tp3: document.getElementById("grade-tp3").value || "0",
+        tp4: document.getElementById("grade-tp4").value || "0",
+        tp5: document.getElementById("grade-tp5").value || "0",
+        tp6: document.getElementById("grade-tp6").value || "0",
+        ats: document.getElementById("grade-ats").value || "0",
+        aas: document.getElementById("grade-aas").value || "0",
+        wp_score: document.getElementById("grade-wp").value || "0",
+        practice_score: document.getElementById("grade-practice").value || "0",
+        report_score: document.getElementById("grade-report").value || "0"
+      };
+
+      toggleLoading(true, "Mengkalkulasi rapot...");
+      closeCRUDModal();
+
+      if (isMockMode) {
+        setTimeout(function() {
+          for (var i = 0; i < appData.nilai.length; i++) {
+            if (appData.nilai[i].id === id) {
+              appData.nilai[i].tp1 = payload.tp1;
+              appData.nilai[i].tp2 = payload.tp2;
+              appData.nilai[i].tp3 = payload.tp3;
+              appData.nilai[i].tp4 = payload.tp4;
+              appData.nilai[i].tp5 = payload.tp5;
+              appData.nilai[i].tp6 = payload.tp6;
+              appData.nilai[i].ats = payload.ats;
+              appData.nilai[i].aas = payload.aas;
+              appData.nilai[i].wp_score = payload.wp_score;
+              appData.nilai[i].practice_score = payload.practice_score;
+              appData.nilai[i].report_score = payload.report_score;
+
+              var n = appData.nilai[i];
+              var avgTp = (parseFloat(n.tp1) + parseFloat(n.tp2) + parseFloat(n.tp3) + parseFloat(n.tp4) + parseFloat(n.tp5) + parseFloat(n.tp6)) / 6;
+              var finalScore = (avgTp * 0.15) + (parseFloat(n.wp_score) * 0.15) + (parseFloat(n.practice_score) * 0.40) + (parseFloat(n.report_score) * 0.15) + (parseFloat(n.ats) * 0.075) + (parseFloat(n.aas) * 0.075);
+              n.final_score = finalScore.toFixed(1);
+              if (finalScore >= 88) n.grade = "A";
+              else if (finalScore >= 80) n.grade = "B";
+              else if (finalScore >= 70) n.grade = "C";
+              else if (finalScore >= 60) n.grade = "D";
+              else n.grade = "E";
+              break;
+            }
+          }
+          renderApp();
+          toggleLoading(false);
+          showToast("Sukses", "Transkrip nilai rapor berhasil disimpan.", "success");
+        }, 500);
+      } else {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res && res.success) {
+              showToast("Sukses", res.message, "success");
+              syncAppData();
+            } else {
+              toggleLoading(false);
+              showToast("Gagal", (res && res.message) ? res.message : "Gagal menyimpan transkrip.", "danger");
+            }
+          })
+          .withFailureHandler(function(err) {
+            toggleLoading(false);
+            showToast("Server Error", err ? err.toString() : "Gagal menyimpan transkrip nilai.", "danger");
+          })
+          .saveStudentGrading(payload);
+      }
+    };
+
+    window.deleteNilaiHandler = function deleteNilaiHandler(id) {
+      openConfirmModal(
+        "Hapus Rekap Nilai",
+        "Apakah Anda yakin ingin menghapus transkrip rekap nilai siswa ini secara permanen dari database?",
+        function() {
+          toggleLoading(true, "Menghapus data rekap nilai...");
+          if (isMockMode) {
+            setTimeout(function() {
+              appData.nilai = appData.nilai.filter(function(n) { return n.id !== id; });
+              renderApp();
+              toggleLoading(false);
+              showToast("Sukses", "Rekapitulasi nilai berhasil dihapus.", "success");
+            }, 500);
+          } else {
+            google.script.run
+              .withSuccessHandler(function(res) {
+                if (res && res.success) {
+                  showToast("Sukses", res.message, "success");
+                  syncAppData();
+                } else {
+                  toggleLoading(false);
+                  showToast("Gagal", (res && res.message) ? res.message : "Gagal menghapus data nilai.", "danger");
+                }
+              })
+              .withFailureHandler(function(err) {
+                toggleLoading(false);
+                showToast("Server Error", err ? err.toString() : "Gagal memproses ke server.", "danger");
+              })
+              .deleteNilai(id);
+          }
+        }
+      );
+    };
+
+    window.openAddNilaiModal = function openAddNilaiModal() {
+      var body = document.getElementById("modal-crud-body");
+      document.getElementById("modal-crud-title").textContent = "INPUT REKAP NILAI MANUAL";
+
+      var kelasSet = {};
+      for (var i = 0; i < appData.students.length; i++) {
+        if (appData.students[i].class) {
+          kelasSet[appData.students[i].class] = true;
+        }
+      }
+      
+      var kelasOptions = '<option value="">-- Pilih Kelas --</option>';
+      for (var k in kelasSet) {
+        kelasOptions += '<option value="' + k + '">' + k + '</option>';
+      }
+
+      var jobsheetOptions = '<option value="">-- Pilih Jobsheet --</option>';
+      for (var j = 0; j < appData.jobsheets.length; j++) {
+        var job = appData.jobsheets[j];
+        jobsheetOptions += '<option value="' + job.id + '" data-title="' + job.name + '">' + (job.code || "") + " - " + job.name + '</option>';
+      }
+
+      body.innerHTML = '<form id="form-crud-action" class="space-y-4" onsubmit="event.preventDefault(); window.submitNewGrading();">' +
+        '<div>' +
+          '<label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Pilih Kelas</label>' +
+          '<select id="manual-grade-class" onchange="window.updateStudentSelectForNil()" required class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold bg-slate-50 dark:bg-slate-955">' +
+            kelasOptions +
+          '</select>' +
+        '</div>' +
+        '<div>' +
+          '<label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Pilih Siswa</label>' +
+          '<select id="manual-grade-student" required class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold bg-slate-50 dark:bg-slate-955" disabled>' +
+            '<option value="">-- Pilih Kelas Terlebih Dahulu --</option>' +
+          '</select>' +
+        '</div>' +
+        '<div>' +
+          '<label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Pilih Unit Kompetensi / Jobsheet</label>' +
+          '<select id="manual-grade-jobsheet" required class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold bg-slate-50 dark:bg-slate-955">' +
+            jobsheetOptions +
+          '</select>' +
+        '</div>' +
+        '<div class="grid grid-cols-3 gap-3 border-t border-slate-100 dark:border-slate-800 pt-3">' +
+          '<div>' +
+            '<label class="text-[9px] font-black uppercase text-slate-400 block mb-0.5">TP1</label>' +
+            '<input type="number" id="manual-tp1" class="w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-semibold bg-slate-50 dark:bg-slate-955" value="0" min="0" max="100">' +
+          '</div>' +
+          '<div>' +
+            '<label class="text-[9px] font-black uppercase text-slate-400 block mb-0.5">TP2</label>' +
+            '<input type="number" id="manual-tp2" class="w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-semibold bg-slate-50 dark:bg-slate-955" value="0" min="0" max="100">' +
+          '</div>' +
+          '<div>' +
+            '<label class="text-[9px] font-black uppercase text-slate-400 block mb-0.5">TP3</label>' +
+            '<input type="number" id="manual-tp3" class="w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-semibold bg-slate-50 dark:bg-slate-955" value="0" min="0" max="100">' +
+          '</div>' +
+          '<div>' +
+            '<label class="text-[9px] font-black uppercase text-slate-400 block mb-0.5">TP4</label>' +
+            '<input type="number" id="manual-tp4" class="w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-semibold bg-slate-50 dark:bg-slate-955" value="0" min="0" max="100">' +
+          '</div>' +
+          '<div>' +
+            '<label class="text-[9px] font-black uppercase text-slate-400 block mb-0.5">TP5</label>' +
+            '<input type="number" id="manual-tp5" class="w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-semibold bg-slate-50 dark:bg-slate-955" value="0" min="0" max="100">' +
+          '</div>' +
+          '<div>' +
+            '<label class="text-[9px] font-black uppercase text-slate-400 block mb-0.5">TP6</label>' +
+            '<input type="number" id="manual-tp6" class="w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-semibold bg-slate-50 dark:bg-slate-955" value="0" min="0" max="100">' +
+          '</div>' +
+        '</div>' +
+        '<div class="grid grid-cols-2 gap-3 border-t border-slate-100 dark:border-slate-800 pt-3">' +
+          '<div>' +
+            '<label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Teori UTS (ATS)</label>' +
+            '<input type="number" id="manual-ats" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold bg-slate-50 dark:bg-slate-955" value="0" min="0" max="100">' +
+          '</div>' +
+          '<div>' +
+            '<label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Teori UAS (AAS)</label>' +
+            '<input type="number" id="manual-aas" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold bg-slate-50 dark:bg-slate-955" value="0" min="0" max="100">' +
+          '</div>' +
+        '</div>' +
+        '<div class="grid grid-cols-3 gap-3 border-t border-slate-100 dark:border-slate-800 pt-3 bg-primary-600/5 p-3 rounded-2xl">' +
+          '<div>' +
+            '<label class="text-[9px] font-black uppercase text-primary-600 dark:text-primary-400 block mb-0.5">Score WP</label>' +
+            '<input type="number" id="manual-wp" class="w-full px-2.5 py-1.5 border border-primary-100 dark:border-primary-800 rounded-lg text-xs font-bold bg-white dark:bg-slate-955" value="0" min="0" max="100">' +
+          '</div>' +
+          '<div>' +
+            '<label class="text-[9px] font-black uppercase text-primary-600 dark:text-primary-400 block mb-0.5">Unjuk Kerja</label>' +
+            '<input type="number" id="manual-practice" class="w-full px-2.5 py-1.5 border border-primary-100 dark:border-primary-800 rounded-lg text-xs font-bold bg-white dark:bg-slate-955" value="0" min="0" max="100">' +
+          '</div>' +
+          '<div>' +
+            '<label class="text-[9px] font-black uppercase text-primary-600 dark:text-primary-400 block mb-0.5">Laporan</label>' +
+            '<input type="number" id="manual-report" class="w-full px-2.5 py-1.5 border border-primary-100 dark:border-primary-800 rounded-lg text-xs font-bold bg-white dark:bg-slate-955" value="0" min="0" max="100">' +
+          '</div>' +
+        '</div>' +
+        '<div class="flex justify-end gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">' +
+          '<button type="button" onclick="window.closeCRUDModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-white text-xs font-bold uppercase rounded-lg">Batal</button>' +
+          '<button type="submit" class="px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white text-xs font-bold uppercase rounded-lg">Simpan Nilai</button>' +
+        '</div>' +
+      '</form>';
+
+      document.getElementById("modal-crud").classList.remove("hidden");
+    };
+
+    window.updateStudentSelectForNil = function updateStudentSelectForNil() {
+      var targetClass = document.getElementById("manual-grade-class").value;
+      var selStudent = document.getElementById("manual-grade-student");
+      
+      if (!targetClass) {
+        selStudent.innerHTML = '<option value="">-- Pilih Kelas Terlebih Dahulu --</option>';
+        selStudent.disabled = true;
+        return;
+      }
+
+      var filteredStudents = appData.students.filter(function(s) {
+        return s.class === targetClass;
+      });
+
+      var options = '<option value="">-- Pilih Siswa --</option>';
+      for (var i = 0; i < filteredStudents.length; i++) {
+        var s = filteredStudents[i];
+        options += '<option value="' + s.nis + '" data-name="' + s.name + '">' + s.name + " (" + s.nis + ")</option>";
+      }
+      selStudent.innerHTML = options;
+      selStudent.disabled = false;
+    };
+
+    window.submitNewGrading = function submitNewGrading() {
+      var studentSelect = document.getElementById("manual-grade-student");
+      var jobsheetSelect = document.getElementById("manual-grade-jobsheet");
+
+      if (!studentSelect.value || !jobsheetSelect.value) {
+        showToast("Form Belum Lengkap", "Harap pilih siswa dan jobsheet terlebih dahulu!", "warning");
+        return;
+      }
+
+      var selectedJob = findById(appData.jobsheets, jobsheetSelect.value);
+
+      var payload = {
+        nis: studentSelect.value,
+        name: studentSelect.options[studentSelect.selectedIndex].getAttribute("data-name"),
+        class: document.getElementById("manual-grade-class").value,
+        jobsheet_id: jobsheetSelect.value,
+        jobsheet_title: selectedJob ? selectedJob.name : jobsheetSelect.options[jobsheetSelect.selectedIndex].text,
+        tp1: document.getElementById("manual-tp1").value || "0",
+        tp2: document.getElementById("manual-tp2").value || "0",
+        tp3: document.getElementById("manual-tp3").value || "0",
+        tp4: document.getElementById("manual-tp4").value || "0",
+        tp5: document.getElementById("manual-tp5").value || "0",
+        tp6: document.getElementById("manual-tp6").value || "0",
+        ats: document.getElementById("manual-ats").value || "0",
+        aas: document.getElementById("manual-aas").value || "0",
+        wp_score: document.getElementById("manual-wp").value || "0",
+        practice_score: document.getElementById("manual-practice").value || "0",
+        report_score: document.getElementById("manual-report").value || "0"
+      };
+
+      toggleLoading(true, "Menyimpan data nilai ke server...");
+      closeCRUDModal();
+
+      if (isMockMode) {
+        setTimeout(function() {
+          var exists = false;
+          for (var i = 0; i < appData.nilai.length; i++) {
+            if (appData.nilai[i].nis === payload.nis && appData.nilai[i].jobsheet_id === payload.jobsheet_id) {
+              appData.nilai[i] = Object.assign(appData.nilai[i], payload);
+              exists = true;
+              break;
+            }
+          }
+          if (!exists) {
+            payload.id = "NIL-" + Math.floor(Math.random() * 1000);
+            appData.nilai.push(payload);
+          }
+          renderApp();
+          toggleLoading(false);
+          showToast("Sukses", "Data nilai manual berhasil tersimpan.", "success");
+        }, 500);
+      } else {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res && res.success) {
+              showToast("Sukses", res.message, "success");
+              syncAppData();
+            } else {
+              toggleLoading(false);
+              showToast("Gagal", (res && res.message) ? res.message : "Sistem gagal menyimpan.", "danger");
+            }
+          })
+          .withFailureHandler(function(err) {
+            toggleLoading(false);
+            showToast("Server Error", err ? err.toString() : "Gagal mengunggah data nilai.", "danger");
+          })
+          .createOrUpdateGrading(payload);
+      }
+    };
+
+    window.saveSystemSettings = function saveSystemSettings() {
+      var payload = {
+        school_name: document.getElementById("setting-school-name").value.trim(),
+        dept_name: document.getElementById("setting-dept-name").value.trim(),
+        school_address: document.getElementById("setting-school-address").value.trim(),
+        principal_name: document.getElementById("setting-principal-name").value.trim(),
+        principal_nip: document.getElementById("setting-principal-nip").value.trim(),
+        teacher_name: document.getElementById("setting-teacher-name").value.trim(),
+        teacher_nip: document.getElementById("setting-teacher-nip").value.trim(),
+        school_logo: document.getElementById("setting-school-logo").value.trim(),
+        dept_logo: document.getElementById("setting-dept-logo").value.trim(),
+        signature_principal: document.getElementById("setting-sig-principal").value.trim(),
+        signature_teacher: document.getElementById("setting-sig-teacher").value.trim(),
+        stamp_school: document.getElementById("setting-stamp-school").value.trim(),
+        cert_desc: document.getElementById("setting-cert-desc").value.trim()
+      };
+
+      toggleLoading(true, "Menyimpan pengaturan...");
+
+      if (isMockMode) {
+        setTimeout(function() {
+          appData.settings = payload;
+          renderApp();
+          toggleLoading(false);
+          showToast("Sukses", "Pengaturan visual sekolah berhasil disimpan.", "success");
+        }, 500);
+      } else {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res && res.success) {
+              showToast("Sukses", res.message, "success");
+              syncAppData();
+            } else {
+              toggleLoading(false);
+              showToast("Gagal", (res && res.message) ? res.message : "Kesalahan server.", "danger");
+            }
+          })
+          .withFailureHandler(function(err) {
+            toggleLoading(false);
+            showToast("Server Error", err ? err.toString() : "Gagal memperbarui konfigurasi.", "danger");
+          })
+          .updateSertifikatSettings(payload);
+      }
+    };
+
+    window.deleteCertificateHandler = function deleteCertificateHandler(id) {
+      openConfirmModal(
+        "Batalkan Sertifikat", 
+        "Apakah Anda yakin ingin membatalkan dan menghapus portofolio sertifikat kelayakan ini secara permanen?", 
+        function() {
+          toggleLoading(true, "Membatalkan berkas sertifikat...");
+          if (isMockMode) {
+            setTimeout(function() {
+              appData.sertifikat = appData.sertifikat.filter(function(c) { return c.id !== id; });
+              renderApp();
+              toggleLoading(false);
+              showToast("Sukses", "Sertifikat berhasil dibatalkan.", "success");
+            }, 500);
+          } else {
+            google.script.run
+              .withSuccessHandler(function(res) {
+                if (res && res.success) {
+                  showToast("Sukses", res.message, "success");
+                  syncAppData();
+                } else {
+                  toggleLoading(false);
+                  showToast("Gagal", (res && res.message) ? res.message : "Gagal membatalkan.", "danger");
+                }
+              })
+              .withFailureHandler(function(err) {
+                toggleLoading(false);
+                showToast("Server Error", err ? err.toString() : "Gagal menghubungi server database.", "danger");
+              })
+              .deleteCertificate(id);
+          }
+        }
+      );
+    };
+
+    window.deleteWpHandler = function deleteWpHandler(id) {
+      openConfirmModal(
+        "Hapus Work Preparation (WP)", 
+        "Apakah Anda yakin ingin menghapus berkas rencana kerja (WP) yang diajukan oleh siswa ini?", 
+        function() {
+          toggleLoading(true, "Menghapus berkas rencana kerja...");
+          if (isMockMode) {
+            setTimeout(function() {
+              appData.wp = appData.wp.filter(function(w) { return w.id !== id; });
+              renderApp();
+              toggleLoading(false);
+              showToast("Sukses", "Berkas WP berhasil dihapus.", "success");
+            }, 500);
+          } else {
+            google.script.run
+              .withSuccessHandler(function(res) {
+                if (res && res.success) {
+                  showToast("Sukses", res.message, "success");
+                  syncAppData();
+                } else {
+                  toggleLoading(false);
+                  showToast("Gagal", (res && res.message) ? res.message : "Gagal menghapus berkas.", "danger");
+                }
+              })
+              .withFailureHandler(function(err) {
+                toggleLoading(false);
+                showToast("Server Error", err ? err.toString() : "Gagal membatalkan pengajuan.", "danger");
+              })
+              .deleteWorkPrep(id);
+          }
+        }
+      );
+    };
+
+    window.deleteLaporanHandler = function deleteLaporanHandler(id) {
+      openConfirmModal(
+        "Hapus Berkas Laporan", 
+        "Apakah Anda yakin ingin menghapus berkas laporan unjuk kerja yang diunggah oleh siswa ini?", 
+        function() {
+          toggleLoading(true, "Menghapus berkas laporan...");
+          if (isMockMode) {
+            setTimeout(function() {
+              appData.laporan = appData.laporan.filter(function(l) { return l.id !== id; });
+              renderApp();
+              toggleLoading(false);
+              showToast("Sukses", "Laporan berhasil dihapus.", "success");
+            }, 500);
+          } else {
+            google.script.run
+              .withSuccessHandler(function(res) {
+                if (res && res.success) {
+                  showToast("Sukses", res.message, "success");
+                  syncAppData();
+                } else {
+                  toggleLoading(false);
+                  showToast("Gagal", (res && res.message) ? res.message : "Gagal menghapus.", "danger");
+                }
+              })
+              .withFailureHandler(function(err) {
+                toggleLoading(false);
+                showToast("Server Error", err ? err.toString() : "Gagal memproses penghapusan.", "danger");
+              })
+              .deleteLaporan(id);
+          }
+        }
+      );
+    };
+
+    window.openAddCertificateModal = function openAddCertificateModal() {
+      var body = document.getElementById("modal-crud-body");
+      document.getElementById("modal-crud-title").textContent = "TERBITKAN SERTIFIKAT MANUAL";
+
+      var studentOptions = "";
+      for (var j = 0; j < appData.students.length; j++) {
+        var s = appData.students[j];
+        studentOptions += '<option value="' + s.nis + '" data-name="' + s.name + '">' + (s.name || "") + ' (' + (s.nis || "") + ') - ' + (s.class || "") + '</option>';
+      }
+
+      var jobsheetOptions = "";
+      for (var k = 0; k < appData.jobsheets.length; k++) {
+        var job = appData.jobsheets[k];
+        jobsheetOptions += '<option value="' + job.name + '">' + (job.code || "") + ' - ' + (job.name || "") + '</option>';
+      }
+
+      body.innerHTML = '<form id="form-crud-action" class="space-y-4">' +
+        '<div>' +
+          '<label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Pilih Siswa</label>' +
+          '<select id="cert-student-select" required class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold bg-slate-50 dark:bg-slate-955">' +
+            studentOptions +
+          '</select>' +
+        '</div>' +
+        '<div>' +
+          '<label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Pilih Unit Kompetensi</label>' +
+          '<select id="cert-jobsheet-select" required class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold bg-slate-50 dark:bg-slate-955">' +
+            jobsheetOptions +
+          '</select>' +
+        '</div>' +
+        '<div>' +
+          '<label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Nilai Akhir Kelulusan</label>' +
+          '<input type="number" id="cert-score-input" required class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold bg-slate-50 dark:bg-slate-955" min="75" max="100" value="85">' +
+        '</div>' +
+        '<div class="flex justify-end gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">' +
+          '<button type="button" onclick="window.closeCRUDModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-white text-xs font-bold uppercase rounded-lg">Batal</button>' +
+          '<button type="button" onclick="window.submitManualCertificate()" class="px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white text-xs font-bold uppercase rounded-lg">Terbitkan</button>' +
+        '</div>' +
+      '</form>';
+
+      document.getElementById("modal-crud").classList.remove("hidden");
+    };
+
+    window.submitManualCertificate = function submitManualCertificate() {
+      var selectStudent = document.getElementById("cert-student-select");
+      var nis = selectStudent.value;
+      var name = selectStudent.options[selectStudent.selectedIndex].getAttribute("data-name");
+      var jobsheet_title = document.getElementById("cert-jobsheet-select").value;
+      var score = document.getElementById("cert-score-input").value;
+
+      var payload = {
+        nis: nis,
+        name: name,
+        jobsheet_title: jobsheet_title,
+        score: score
+      };
+
+      toggleLoading(true, "Menerbitkan sertifikat kompetensi...");
+      closeCRUDModal();
+
+      if (isMockMode) {
+        setTimeout(function() {
+          var certNo = "CERT/TO/DIR/00" + (appData.sertifikat.length + 1) + "-" + Math.floor(Math.random() * 90000 + 10000);
+          appData.sertifikat.push({
+            id: "CERT-0" + (appData.sertifikat.length + 1),
+            cert_number: certNo,
+            student_name: name,
+            nis: nis,
+            competency: "Teknik Otomotif",
+            jobsheet_title: jobsheet_title,
+            final_score: score,
+            date: new Date().toLocaleDateString("id-ID"),
+            qr_code: ""
+          });
+          renderApp();
+          toggleLoading(false);
+          showToast("Sukses", "E-Sertifikat berhasil diterbitkan secara manual.", "success");
+        }, 500);
+      } else {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res && res.success) {
+              showToast("Sukses", res.message, "success");
+              syncAppData();
+            } else {
+              toggleLoading(false);
+              showToast("Gagal", (res && res.message) ? res.message : "Tidak dapat menerbitkan.", "danger");
+            }
+          })
+          .withFailureHandler(function(err) {
+            toggleLoading(false);
+            showToast("Server Error", err ? err.toString() : "Gagal menerbitkan sertifikat.", "danger");
+          })
+          .directIssueCertificate(payload);
+      }
+    };
+
+    window.previewAndCompressUpload = function previewAndCompressUpload(event, previewContainerId, targetHiddenInputId) {
+      var file = event.target && event.target.files ? event.target.files[0] : null;
+      if (!file) return;
+
+      if (!file.type.match('image.*')) {
+        showToast("Format Salah", "Pilih file gambar berformat PNG, JPG, atau WebP!", "warning");
+        return;
+      }
+
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var img = new Image();
+        img.onload = function() {
+          var maxDim = 700;
+          var w = img.width;
+          var h = img.height;
+
+          if (w > maxDim || h > maxDim) {
+            if (w > h) {
+              h = Math.round((h * maxDim) / w);
+              w = maxDim;
+            } else {
+              w = Math.round((w * maxDim) / h);
+              h = maxDim;
+            }
+          }
+
+          var canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          var ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, w, h);
+
+          var compressedBase64 = canvas.toDataURL("image/jpeg", 0.68);
+
+          document.getElementById(targetHiddenInputId).value = compressedBase64;
+          
+          var container = document.getElementById(previewContainerId);
+          var imgEl = container.querySelector("img");
+          var nameEl = container.querySelector("p");
+          
+          if (imgEl) imgEl.src = compressedBase64;
+          if (nameEl) nameEl.textContent = file.name + " (" + Math.round(compressedBase64.length / 1024) + " KB)";
+          
+          container.classList.remove("hidden");
+          showToast("Foto Siap", "Foto berhasil dioptimalkan.", "success");
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    };
+
+    window.clearUploadPreview = function clearUploadPreview(fileInputId, previewContainerId, targetHiddenInputId) {
+      var fileInput = document.getElementById(fileInputId);
+      var hiddenInput = document.getElementById(targetHiddenInputId);
+      var container = document.getElementById(previewContainerId);
+
+      if (fileInput) fileInput.value = "";
+      if (hiddenInput) hiddenInput.value = "";
+      if (container) container.classList.add("hidden");
+    };
+  </script>
+</body>
+</html>
